@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, LogOut } from 'lucide-react';
+import { Menu, X, User, LogOut, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,12 +10,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import logo from '@/assets/logo.png';
 import { currentUser } from '@/data/mockData';
 
 const navItems = [
   { name: 'Home', path: '/' },
-  { name: 'Builders Skill Sprint', path: '/skill-sprint' },
+  { name: 'Skill Sprint', path: '/skill-sprint' },
+  { name: 'Meetups', path: '/meetups' },
   { name: 'College Champs', path: '/college-champs' },
   { name: 'Certification Circle', path: '/certification-circle' },
   { name: 'Store', path: '/store' },
@@ -29,6 +31,9 @@ interface HeaderProps {
 export function Header({ isLoggedIn = true, onLogout }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+
+  const isAdmin = currentUser.role === 'admin';
+  const isSpeaker = currentUser.role === 'speaker';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -56,6 +61,19 @@ export function Header({ isLoggedIn = true, onLogout }: HeaderProps) {
               {item.name}
             </Link>
           ))}
+          {(isAdmin || isSpeaker) && (
+            <Link
+              to="/admin"
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${
+                location.pathname.startsWith('/admin')
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              }`}
+            >
+              <Shield className="h-4 w-4" />
+              Admin
+            </Link>
+          )}
         </nav>
 
         {/* Auth Section */}
@@ -77,7 +95,12 @@ export function Header({ isLoggedIn = true, onLogout }: HeaderProps) {
                     <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col">
-                    <p className="text-sm font-medium">{currentUser.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">{currentUser.name}</p>
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {currentUser.role}
+                      </Badge>
+                    </div>
                     <p className="text-xs text-muted-foreground">{currentUser.points} points</p>
                   </div>
                 </div>
@@ -88,6 +111,14 @@ export function Header({ isLoggedIn = true, onLogout }: HeaderProps) {
                     Profile
                   </Link>
                 </DropdownMenuItem>
+                {(isAdmin || isSpeaker) && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
+                      <Shield className="h-4 w-4" />
+                      Admin Panel
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onLogout} className="text-destructive cursor-pointer">
                   <LogOut className="h-4 w-4 mr-2" />
@@ -120,7 +151,7 @@ export function Header({ isLoggedIn = true, onLogout }: HeaderProps) {
 
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-border bg-background">
+        <div className="lg:hidden border-t border-border bg-background animate-fade-in">
           <nav className="container mx-auto px-4 py-4 flex flex-col gap-2">
             {navItems.map((item) => (
               <Link
@@ -136,6 +167,20 @@ export function Header({ isLoggedIn = true, onLogout }: HeaderProps) {
                 {item.name}
               </Link>
             ))}
+            {(isAdmin || isSpeaker) && (
+              <Link
+                to="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                  location.pathname.startsWith('/admin')
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                <Shield className="h-4 w-4" />
+                Admin Panel
+              </Link>
+            )}
             {!isLoggedIn && (
               <div className="flex flex-col gap-2 pt-4 border-t border-border mt-2">
                 <Button variant="outline" asChild>

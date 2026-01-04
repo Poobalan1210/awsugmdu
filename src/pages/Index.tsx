@@ -17,15 +17,14 @@ const Index = () => {
           <InitiativesSection />
         </div>
 
+        {/* Events Section - Full Width */}
         <div className="container mx-auto px-4 py-16">
-          <div className="grid gap-8 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-              <EventsSection />
-            </div>
-            <div className="lg:col-span-1">
-              <Leaderboard />
-            </div>
-          </div>
+          <EventsSection />
+        </div>
+
+        {/* Leaderboard Section - Full Width */}
+        <div className="container mx-auto px-4 py-16">
+          <Leaderboard />
         </div>
       </main>
 

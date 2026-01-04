@@ -11,6 +11,8 @@ import SkillSprint from "./pages/SkillSprint";
 import CollegeChamps from "./pages/CollegeChamps";
 import CertificationCircle from "./pages/CertificationCircle";
 import Store from "./pages/Store";
+import Meetups from "./pages/Meetups";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,10 +28,13 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:userId" element={<Profile />} />
           <Route path="/skill-sprint" element={<SkillSprint />} />
           <Route path="/college-champs" element={<CollegeChamps />} />
           <Route path="/certification-circle" element={<CertificationCircle />} />
           <Route path="/store" element={<Store />} />
+          <Route path="/meetups" element={<Meetups />} />
+          <Route path="/admin" element={<Admin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
