@@ -17,6 +17,7 @@ export interface User {
   company?: string;
   linkedIn?: string;
   github?: string;
+  twitter?: string;
 }
 
 export interface Badge {
@@ -41,6 +42,7 @@ export interface Sprint {
   submissions: Submission[];
   githubRepo?: string;
   registeredUsers: string[];
+  posterImage?: string;
 }
 
 export interface Session {
@@ -50,11 +52,18 @@ export interface Session {
   speakerId?: string;
   speakerPhoto?: string;
   speakerDesignation?: string;
+  speakerCompany?: string;
+  speakerBio?: string;
+  speakerLinkedIn?: string;
   date: string;
   time: string;
+  duration?: string;
   description: string;
+  agenda?: string[];
   meetingLink?: string;
   recordingUrl?: string;
+  slidesUrl?: string;
+  posterImage?: string;
 }
 
 export interface Submission {
@@ -93,6 +102,7 @@ export interface Meetup {
 
 export interface MeetupSpeaker {
   id: string;
+  uniqueLink?: string;
   userId?: string;
   name: string;
   photo: string;
@@ -100,6 +110,8 @@ export interface MeetupSpeaker {
   company?: string;
   topic: string;
   bio?: string;
+  linkedIn?: string;
+  sessionDetails?: string;
 }
 
 export interface Event {
@@ -112,7 +124,7 @@ export interface Event {
   category: 'sprint' | 'workshop' | 'meetup' | 'certification' | 'champs';
   attendees: number;
   image?: string;
-  linkedEventId?: string; // Links to sprint/meetup id
+  linkedEventId?: string;
 }
 
 export interface ForumPost {
@@ -128,7 +140,18 @@ export interface ForumPost {
   likes: number;
 }
 
-// Mock Users with roles
+export interface SpeakerInvite {
+  id: string;
+  eventType: 'sprint' | 'meetup';
+  eventId: string;
+  uniqueLink: string;
+  email?: string;
+  status: 'pending' | 'accepted' | 'expired';
+  createdAt: string;
+  expiresAt: string;
+}
+
+// Mock Users with roles - 5 users with rich profiles
 export const mockUsers: User[] = [
   {
     id: 'admin1',
@@ -139,10 +162,13 @@ export const mockUsers: User[] = [
     rank: 0,
     badges: [],
     joinedDate: '2023-01-01',
-    bio: 'AWS User Group Administrator',
+    bio: 'AWS User Group Administrator. Passionate about building developer communities and fostering cloud adoption.',
     role: 'admin',
     designation: 'Community Lead',
-    company: 'AWS User Group'
+    company: 'AWS User Group',
+    linkedIn: 'https://linkedin.com/in/admin',
+    github: 'https://github.com/admin',
+    twitter: 'https://twitter.com/admin'
   },
   {
     id: '1',
@@ -153,12 +179,13 @@ export const mockUsers: User[] = [
     rank: 1,
     badges: [],
     joinedDate: '2024-01-15',
-    bio: 'Cloud enthusiast | AWS Community Builder',
+    bio: 'Cloud enthusiast and AWS Community Builder. I love building serverless applications and sharing knowledge through technical blogs and talks.',
     role: 'speaker',
     designation: 'Solutions Architect',
     company: 'Tech Corp',
-    linkedIn: 'https://linkedin.com/in/priya',
-    github: 'https://github.com/priya'
+    linkedIn: 'https://linkedin.com/in/priya-sharma',
+    github: 'https://github.com/priya-sharma',
+    twitter: 'https://twitter.com/priyasharma'
   },
   {
     id: '2',
@@ -169,10 +196,12 @@ export const mockUsers: User[] = [
     rank: 2,
     badges: [],
     joinedDate: '2024-02-20',
-    bio: 'DevOps Engineer | Serverless Advocate',
+    bio: 'DevOps Engineer with expertise in AWS, Kubernetes, and CI/CD pipelines. Serverless advocate and open source contributor.',
     role: 'speaker',
     designation: 'DevOps Lead',
-    company: 'Cloud Solutions'
+    company: 'Cloud Solutions Inc',
+    linkedIn: 'https://linkedin.com/in/rahul-verma',
+    github: 'https://github.com/rahul-verma'
   },
   {
     id: '3',
@@ -183,9 +212,12 @@ export const mockUsers: User[] = [
     rank: 3,
     badges: [],
     joinedDate: '2024-01-10',
-    bio: 'Solutions Architect | Gen AI Explorer',
+    bio: 'Solutions Architect exploring the frontiers of Generative AI on AWS. 3x AWS Certified. Regular speaker at tech meetups.',
     role: 'participant',
-    designation: 'Cloud Engineer'
+    designation: 'Cloud Engineer',
+    company: 'DataFlow Systems',
+    linkedIn: 'https://linkedin.com/in/ananya-patel',
+    github: 'https://github.com/ananya-patel'
   },
   {
     id: '4',
@@ -196,7 +228,11 @@ export const mockUsers: User[] = [
     rank: 4,
     badges: [],
     joinedDate: '2024-03-05',
-    role: 'participant'
+    bio: 'Security specialist focusing on AWS IAM, KMS, and compliance. Helping organizations build secure cloud architectures.',
+    role: 'participant',
+    designation: 'Security Consultant',
+    company: 'SecureCloud Ltd',
+    linkedIn: 'https://linkedin.com/in/vikram-singh'
   },
   {
     id: '5',
@@ -207,7 +243,13 @@ export const mockUsers: User[] = [
     rank: 5,
     badges: [],
     joinedDate: '2024-02-28',
-    role: 'participant'
+    bio: 'Full-stack developer transitioning to cloud. Active learner and blogger sharing my AWS journey.',
+    role: 'participant',
+    designation: 'Software Engineer',
+    company: 'StartupXYZ',
+    linkedIn: 'https://linkedin.com/in/sneha-reddy',
+    github: 'https://github.com/sneha-reddy',
+    twitter: 'https://twitter.com/snehareddy'
   },
   {
     id: '6',
@@ -218,7 +260,10 @@ export const mockUsers: User[] = [
     rank: 6,
     badges: [],
     joinedDate: '2024-04-12',
-    role: 'participant'
+    role: 'participant',
+    bio: 'Backend developer learning AWS. Interested in microservices and container orchestration.',
+    designation: 'Backend Developer',
+    company: 'TechStartup'
   },
   {
     id: '7',
@@ -229,7 +274,10 @@ export const mockUsers: User[] = [
     rank: 7,
     badges: [],
     joinedDate: '2024-03-22',
-    role: 'participant'
+    role: 'participant',
+    bio: 'Data Engineer working with AWS data services. Love exploring new ways to process big data.',
+    designation: 'Data Engineer',
+    company: 'Analytics Co'
   },
   {
     id: '8',
@@ -240,7 +288,10 @@ export const mockUsers: User[] = [
     rank: 8,
     badges: [],
     joinedDate: '2024-05-01',
-    role: 'participant'
+    role: 'participant',
+    bio: 'Cloud enthusiast and student. Preparing for AWS Solutions Architect certification.',
+    designation: 'Student',
+    company: 'University of Technology'
   }
 ];
 
@@ -293,15 +344,32 @@ export const mockBadges: Badge[] = [
     icon: '⭐',
     earnedDate: '2024-01-15',
     category: 'special'
+  },
+  {
+    id: 'b7',
+    name: 'Speaker Star',
+    description: 'Delivered 3 sessions',
+    icon: '🎤',
+    earnedDate: '2024-07-01',
+    category: 'contribution'
+  },
+  {
+    id: 'b8',
+    name: 'Security Expert',
+    description: 'Completed Security Sprint',
+    icon: '🔒',
+    earnedDate: '2024-12-31',
+    category: 'sprint'
   }
 ];
 
-// Assign badges to users
-mockUsers[1].badges = [mockBadges[0], mockBadges[2], mockBadges[4], mockBadges[5]];
-mockUsers[2].badges = [mockBadges[1], mockBadges[3]];
-mockUsers[3].badges = [mockBadges[0], mockBadges[1], mockBadges[2]];
-mockUsers[4].badges = [mockBadges[1]];
-mockUsers[5].badges = [mockBadges[1], mockBadges[4]];
+// Assign badges to users with more variety
+mockUsers[0].badges = [mockBadges[5], mockBadges[6]]; // Admin
+mockUsers[1].badges = [mockBadges[0], mockBadges[2], mockBadges[4], mockBadges[5], mockBadges[6]]; // Priya
+mockUsers[2].badges = [mockBadges[1], mockBadges[3], mockBadges[7]]; // Rahul
+mockUsers[3].badges = [mockBadges[0], mockBadges[1], mockBadges[2], mockBadges[4]]; // Ananya
+mockUsers[4].badges = [mockBadges[1], mockBadges[7]]; // Vikram
+mockUsers[5].badges = [mockBadges[1], mockBadges[4]]; // Sneha
 
 // Mock Sprints
 export const mockSprints: Sprint[] = [
@@ -309,13 +377,14 @@ export const mockSprints: Sprint[] = [
     id: 's1',
     title: 'Serverless January',
     theme: 'Serverless',
-    description: 'Build scalable applications using AWS Lambda, API Gateway, and DynamoDB. Learn event-driven architecture patterns.',
+    description: 'Build scalable applications using AWS Lambda, API Gateway, and DynamoDB. Learn event-driven architecture patterns and best practices for serverless development.',
     startDate: '2025-01-01',
     endDate: '2025-01-31',
     status: 'active',
     participants: 45,
     githubRepo: 'https://github.com/aws-ug/serverless-sprint-2025',
     registeredUsers: ['3', '4', '5', '6', '7', '8'],
+    posterImage: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=400&fit=crop',
     sessions: [
       {
         id: 'ses1',
@@ -323,11 +392,23 @@ export const mockSprints: Sprint[] = [
         speaker: 'Priya Sharma',
         speakerId: '1',
         speakerPhoto: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya',
-        speakerDesignation: 'Solutions Architect at Tech Corp',
+        speakerDesignation: 'Solutions Architect',
+        speakerCompany: 'Tech Corp',
+        speakerBio: 'AWS Community Builder with 5+ years of experience building serverless applications at scale.',
+        speakerLinkedIn: 'https://linkedin.com/in/priya-sharma',
         date: '2025-01-05',
         time: '18:00 IST',
-        description: 'Learn the fundamentals of serverless computing and AWS Lambda.',
-        meetingLink: 'https://meet.example.com/ses1'
+        duration: '90 minutes',
+        description: 'Learn the fundamentals of serverless computing and AWS Lambda. We will cover the basics of event-driven architecture and how to build your first Lambda function.',
+        agenda: [
+          'What is Serverless Computing?',
+          'AWS Lambda fundamentals',
+          'Event-driven architecture patterns',
+          'Hands-on: Your first Lambda function',
+          'Q&A session'
+        ],
+        meetingLink: 'https://meet.example.com/ses1',
+        posterImage: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&h=300&fit=crop'
       },
       {
         id: 'ses2',
@@ -335,11 +416,23 @@ export const mockSprints: Sprint[] = [
         speaker: 'Rahul Verma',
         speakerId: '2',
         speakerPhoto: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul',
-        speakerDesignation: 'DevOps Lead at Cloud Solutions',
+        speakerDesignation: 'DevOps Lead',
+        speakerCompany: 'Cloud Solutions Inc',
+        speakerBio: 'DevOps engineer specializing in AWS serverless and container orchestration.',
+        speakerLinkedIn: 'https://linkedin.com/in/rahul-verma',
         date: '2025-01-15',
         time: '18:00 IST',
-        description: 'Deep dive into REST and WebSocket APIs using Amazon API Gateway.',
-        meetingLink: 'https://meet.example.com/ses2'
+        duration: '90 minutes',
+        description: 'Deep dive into REST and WebSocket APIs using Amazon API Gateway. Learn how to create, deploy, and manage APIs at scale.',
+        agenda: [
+          'API Gateway Overview',
+          'REST vs WebSocket APIs',
+          'Integration with Lambda',
+          'Authentication and Authorization',
+          'Best practices and cost optimization'
+        ],
+        meetingLink: 'https://meet.example.com/ses2',
+        posterImage: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=600&h=300&fit=crop'
       }
     ],
     submissions: [
@@ -351,10 +444,11 @@ export const mockSprints: Sprint[] = [
         userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya',
         blogUrl: 'https://dev.to/ananya/serverless-journey',
         repoUrl: 'https://github.com/ananya/serverless-app',
-        description: 'Built a complete serverless REST API with Lambda and DynamoDB',
+        description: 'Built a complete serverless REST API with Lambda and DynamoDB for a task management application.',
         submittedAt: '2025-01-20',
         points: 100,
         status: 'approved',
+        feedback: 'Great work! Well-structured code and excellent documentation.',
         reviewedBy: 'admin1',
         reviewedAt: '2025-01-21'
       },
@@ -365,7 +459,7 @@ export const mockSprints: Sprint[] = [
         userName: 'Sneha Reddy',
         userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sneha',
         blogUrl: 'https://medium.com/@sneha/my-serverless-app',
-        description: 'Created a serverless image processing pipeline',
+        description: 'Created a serverless image processing pipeline using S3 triggers and Lambda.',
         submittedAt: '2025-01-22',
         points: 0,
         status: 'pending'
@@ -377,7 +471,7 @@ export const mockSprints: Sprint[] = [
         userName: 'Arjun Nair',
         userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun',
         repoUrl: 'https://github.com/arjun/lambda-functions',
-        description: 'Lambda functions collection for various use cases',
+        description: 'Lambda functions collection for various use cases including file processing and notifications.',
         submittedAt: '2025-01-23',
         points: 0,
         status: 'pending'
@@ -388,12 +482,13 @@ export const mockSprints: Sprint[] = [
     id: 's2',
     title: 'GenAI February',
     theme: 'Generative AI',
-    description: 'Explore Amazon Bedrock, build AI-powered applications, and learn prompt engineering best practices.',
+    description: 'Explore Amazon Bedrock, build AI-powered applications, and learn prompt engineering best practices. Get hands-on experience with foundation models.',
     startDate: '2025-02-01',
     endDate: '2025-02-28',
     status: 'upcoming',
     participants: 32,
     registeredUsers: ['3', '4'],
+    posterImage: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop',
     sessions: [
       {
         id: 'ses3',
@@ -402,9 +497,20 @@ export const mockSprints: Sprint[] = [
         speakerId: '3',
         speakerPhoto: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya',
         speakerDesignation: 'Cloud Engineer',
+        speakerCompany: 'DataFlow Systems',
+        speakerBio: 'Solutions Architect with a passion for AI/ML and cloud technologies.',
         date: '2025-02-08',
         time: '18:00 IST',
-        description: 'Introduction to foundation models and Amazon Bedrock.'
+        duration: '90 minutes',
+        description: 'Introduction to foundation models and Amazon Bedrock. Learn how to integrate AI capabilities into your applications.',
+        agenda: [
+          'Introduction to Generative AI',
+          'Amazon Bedrock Overview',
+          'Available Foundation Models',
+          'Hands-on: Your first Bedrock app',
+          'Prompt Engineering basics'
+        ],
+        posterImage: 'https://images.unsplash.com/photo-1676299081847-824916de030a?w=600&h=300&fit=crop'
       }
     ],
     submissions: []
@@ -413,13 +519,14 @@ export const mockSprints: Sprint[] = [
     id: 's3',
     title: 'Security December',
     theme: 'Security',
-    description: 'Master AWS security services including IAM, KMS, and Security Hub. Build secure cloud architectures.',
+    description: 'Master AWS security services including IAM, KMS, and Security Hub. Build secure cloud architectures and learn compliance best practices.',
     startDate: '2024-12-01',
     endDate: '2024-12-31',
     status: 'completed',
     participants: 38,
     githubRepo: 'https://github.com/aws-ug/security-sprint-2024',
     registeredUsers: ['1', '2', '3', '4', '5'],
+    posterImage: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&h=400&fit=crop',
     sessions: [
       {
         id: 'ses4',
@@ -427,11 +534,22 @@ export const mockSprints: Sprint[] = [
         speaker: 'Vikram Singh',
         speakerId: '4',
         speakerPhoto: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Vikram',
-        speakerDesignation: 'Security Specialist',
+        speakerDesignation: 'Security Consultant',
+        speakerCompany: 'SecureCloud Ltd',
+        speakerBio: 'Security specialist with expertise in AWS IAM, KMS, and compliance frameworks.',
         date: '2024-12-10',
         time: '18:00 IST',
-        description: 'Understanding IAM policies, roles, and best practices.',
-        recordingUrl: 'https://youtube.com/watch?v=security-session'
+        duration: '120 minutes',
+        description: 'Understanding IAM policies, roles, and best practices for secure AWS architectures.',
+        agenda: [
+          'IAM Fundamentals',
+          'Policy deep dive',
+          'Roles and cross-account access',
+          'Best practices',
+          'Common pitfalls to avoid'
+        ],
+        recordingUrl: 'https://youtube.com/watch?v=security-session',
+        posterImage: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=300&fit=crop'
       }
     ],
     submissions: [
@@ -442,10 +560,11 @@ export const mockSprints: Sprint[] = [
         userName: 'Priya Sharma',
         userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya',
         blogUrl: 'https://medium.com/@priya/aws-security-best-practices',
-        description: 'Comprehensive guide to AWS security best practices',
+        description: 'Comprehensive guide to AWS security best practices covering IAM, encryption, and network security.',
         submittedAt: '2024-12-28',
         points: 150,
         status: 'approved',
+        feedback: 'Excellent detailed guide! Very comprehensive.',
         reviewedBy: 'admin1',
         reviewedAt: '2024-12-29'
       },
@@ -456,10 +575,11 @@ export const mockSprints: Sprint[] = [
         userName: 'Rahul Verma',
         userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul',
         repoUrl: 'https://github.com/rahul/secure-app',
-        description: 'Secure application template with proper IAM configuration',
+        description: 'Secure application template with proper IAM configuration, encryption at rest, and network isolation.',
         submittedAt: '2024-12-25',
         points: 100,
         status: 'approved',
+        feedback: 'Great template! Well-documented.',
         reviewedBy: 'admin1',
         reviewedAt: '2024-12-26'
       }
@@ -472,7 +592,7 @@ export const mockMeetups: Meetup[] = [
   {
     id: 'm1',
     title: 'AWS re:Invent Recap 2024',
-    description: 'Catch up on all the exciting announcements from AWS re:Invent 2024. Join us for a comprehensive overview of new services, features, and best practices.',
+    description: 'Catch up on all the exciting announcements from AWS re:Invent 2024. Join us for a comprehensive overview of new services, features, and best practices shared at the event.',
     date: '2024-12-15',
     time: '18:00 IST',
     type: 'hybrid',
@@ -491,7 +611,9 @@ export const mockMeetups: Meetup[] = [
         designation: 'Solutions Architect',
         company: 'Tech Corp',
         topic: 'New Compute Services Overview',
-        bio: 'AWS Community Builder with 5+ years of cloud experience'
+        bio: 'AWS Community Builder with 5+ years of cloud experience',
+        linkedIn: 'https://linkedin.com/in/priya-sharma',
+        sessionDetails: 'Covering EC2 updates, Lambda enhancements, and new container services announced at re:Invent.'
       },
       {
         id: 'ms2',
@@ -499,9 +621,11 @@ export const mockMeetups: Meetup[] = [
         name: 'Rahul Verma',
         photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul',
         designation: 'DevOps Lead',
-        company: 'Cloud Solutions',
-        topic: 'Serverless Updates',
-        bio: 'DevOps engineer specializing in AWS serverless'
+        company: 'Cloud Solutions Inc',
+        topic: 'Serverless Updates and Lambda SnapStart',
+        bio: 'DevOps engineer specializing in AWS serverless',
+        linkedIn: 'https://linkedin.com/in/rahul-verma',
+        sessionDetails: 'Deep dive into Lambda SnapStart, new runtime support, and serverless best practices.'
       }
     ],
     image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'
@@ -509,7 +633,7 @@ export const mockMeetups: Meetup[] = [
   {
     id: 'm2',
     title: 'Hands-on Workshop: Container Services',
-    description: 'Deep dive into ECS and EKS with hands-on labs. Learn container orchestration on AWS from industry experts.',
+    description: 'Deep dive into ECS and EKS with hands-on labs. Learn container orchestration on AWS from industry experts. Bring your laptop!',
     date: '2025-01-25',
     time: '10:00 IST',
     type: 'in-person',
@@ -525,7 +649,9 @@ export const mockMeetups: Meetup[] = [
         photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Karthik',
         designation: 'Container Specialist',
         company: 'AWS',
-        topic: 'ECS vs EKS: When to use what'
+        topic: 'ECS vs EKS: When to use what',
+        bio: 'AWS Container Hero helping teams adopt containerization',
+        sessionDetails: 'Comprehensive comparison of ECS and EKS with real-world use cases and hands-on exercises.'
       }
     ],
     image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&h=400&fit=crop'
@@ -533,7 +659,7 @@ export const mockMeetups: Meetup[] = [
   {
     id: 'm3',
     title: 'AWS Community Day - Cloud Native',
-    description: 'A full-day event dedicated to cloud native technologies. Multiple tracks covering containers, serverless, and microservices.',
+    description: 'A full-day event dedicated to cloud native technologies. Multiple tracks covering containers, serverless, and microservices. Networking opportunities included!',
     date: '2025-02-15',
     time: '09:00 IST',
     type: 'hybrid',
@@ -551,7 +677,9 @@ export const mockMeetups: Meetup[] = [
         photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya',
         designation: 'Solutions Architect',
         company: 'Tech Corp',
-        topic: 'Microservices Architecture Patterns'
+        topic: 'Microservices Architecture Patterns',
+        bio: 'AWS Community Builder with expertise in distributed systems',
+        linkedIn: 'https://linkedin.com/in/priya-sharma'
       }
     ],
     image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=800&h=400&fit=crop'
@@ -559,7 +687,7 @@ export const mockMeetups: Meetup[] = [
   {
     id: 'm4',
     title: 'AWS Certification Study Group Kickoff',
-    description: 'Weekly study group for Solutions Architect Associate certification. Join fellow learners and prepare together.',
+    description: 'Weekly study group for Solutions Architect Associate certification. Join fellow learners and prepare together with structured study materials.',
     date: '2025-01-10',
     time: '19:00 IST',
     type: 'virtual',
@@ -568,44 +696,63 @@ export const mockMeetups: Meetup[] = [
     attendees: 28,
     maxAttendees: 40,
     registeredUsers: ['4', '5', '6', '7'],
-    speakers: []
+    speakers: [],
+    image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&h=400&fit=crop'
   }
 ];
 
-// Mock Events (combined view for home page)
+// Mock Speaker Invites
+export const mockSpeakerInvites: SpeakerInvite[] = [
+  {
+    id: 'inv1',
+    eventType: 'sprint',
+    eventId: 's2',
+    uniqueLink: 'speaker-invite-abc123',
+    email: 'speaker@example.com',
+    status: 'pending',
+    createdAt: '2025-01-15',
+    expiresAt: '2025-02-01'
+  }
+];
+
+// Generate unified events from sprints and meetups for home page
 export const mockEvents: Event[] = [
+  // From Sprints
   {
     id: 'e1',
-    title: 'Serverless Sprint Kickoff',
-    description: 'Join us for the January Serverless Sprint kickoff session. Learn about the challenge and get started!',
+    title: 'Serverless January - Kickoff Session',
+    description: 'Join us for the January Serverless Sprint kickoff session. Learn about the challenge and get started with serverless!',
     date: '2025-01-05',
     time: '18:00 IST',
     type: 'virtual',
     category: 'sprint',
-    attendees: 65,
-    linkedEventId: 's1'
+    attendees: 45,
+    linkedEventId: 's1',
+    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=400&fit=crop'
   },
   {
     id: 'e2',
-    title: 'AWS re:Invent Recap',
+    title: 'AWS re:Invent Recap 2024',
     description: 'Catch up on all the exciting announcements from AWS re:Invent 2024.',
     date: '2024-12-15',
     time: '18:00 IST',
     type: 'hybrid',
     category: 'meetup',
     attendees: 120,
-    linkedEventId: 'm1'
+    linkedEventId: 'm1',
+    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'
   },
   {
     id: 'e3',
-    title: 'GenAI Sprint Kickoff',
+    title: 'GenAI February - Sprint Launch',
     description: 'February GenAI Sprint begins! Build AI-powered applications with Amazon Bedrock.',
     date: '2025-02-01',
     time: '18:00 IST',
     type: 'virtual',
     category: 'sprint',
-    attendees: 45,
-    linkedEventId: 's2'
+    attendees: 32,
+    linkedEventId: 's2',
+    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop'
   },
   {
     id: 'e4',
@@ -616,7 +763,8 @@ export const mockEvents: Event[] = [
     type: 'virtual',
     category: 'certification',
     attendees: 28,
-    linkedEventId: 'm4'
+    linkedEventId: 'm4',
+    image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&h=400&fit=crop'
   },
   {
     id: 'e5',
@@ -627,7 +775,8 @@ export const mockEvents: Event[] = [
     type: 'in-person',
     category: 'workshop',
     attendees: 35,
-    linkedEventId: 'm2'
+    linkedEventId: 'm2',
+    image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&h=400&fit=crop'
   },
   {
     id: 'e6',
@@ -638,7 +787,20 @@ export const mockEvents: Event[] = [
     type: 'hybrid',
     category: 'meetup',
     attendees: 85,
-    linkedEventId: 'm3'
+    linkedEventId: 'm3',
+    image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=800&h=400&fit=crop'
+  },
+  {
+    id: 'e7',
+    title: 'Security December - Sprint Finale',
+    description: 'Final session of the Security Sprint with project showcases.',
+    date: '2024-12-28',
+    time: '18:00 IST',
+    type: 'virtual',
+    category: 'sprint',
+    attendees: 38,
+    linkedEventId: 's3',
+    image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&h=400&fit=crop'
   }
 ];
 
@@ -651,7 +813,7 @@ export const mockForumPosts: ForumPost[] = [
     userName: 'Ananya Patel',
     userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya',
     title: 'Stuck with Lambda cold starts - any tips?',
-    content: 'I am experiencing significant cold start times with my Lambda function. Has anyone found effective ways to reduce this?',
+    content: 'I am experiencing significant cold start times with my Lambda function. Has anyone found effective ways to reduce this? I have tried provisioned concurrency but it is expensive for my use case.',
     createdAt: '2025-01-08',
     replies: 12,
     likes: 8
@@ -663,7 +825,7 @@ export const mockForumPosts: ForumPost[] = [
     userName: 'Rahul Verma',
     userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul',
     title: 'Best practices for DynamoDB single-table design',
-    content: 'Sharing my learnings from implementing single-table design in my sprint project...',
+    content: 'Sharing my learnings from implementing single-table design in my sprint project. Key takeaway: access patterns first, then model your data!',
     createdAt: '2025-01-10',
     replies: 7,
     likes: 15
@@ -675,7 +837,7 @@ export const mockForumPosts: ForumPost[] = [
     userName: 'Priya Sharma',
     userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya',
     title: 'Sprint Challenge Hints - Week 2',
-    content: 'Here are some hints for this weeks challenge. Remember to use Step Functions for orchestration!',
+    content: 'Here are some hints for this week\'s challenge. Remember to use Step Functions for orchestration! Also check out the new EventBridge Scheduler for time-based workflows.',
     createdAt: '2025-01-12',
     replies: 23,
     likes: 42
@@ -685,7 +847,7 @@ export const mockForumPosts: ForumPost[] = [
 // Current logged in user (for demo - can be switched between roles)
 export const adminUser: User = mockUsers[0]; // Admin
 export const speakerUser: User = mockUsers[1]; // Speaker (Priya)
-export const participantUser: User = mockUsers[3]; // Participant (Vikram)
+export const participantUser: User = mockUsers[3]; // Participant (Ananya)
 
 // Default current user - change this to test different roles
 export const currentUser: User = adminUser;
@@ -709,4 +871,10 @@ export const getEventLink = (event: Event): string => {
     default:
       return '/';
   }
+};
+
+// Generate unique speaker invite link
+export const generateSpeakerInviteLink = (eventType: 'sprint' | 'meetup', eventId: string): string => {
+  const uniqueId = Math.random().toString(36).substring(2, 15);
+  return `speaker-invite-${eventType}-${eventId}-${uniqueId}`;
 };
