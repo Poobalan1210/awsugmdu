@@ -1,76 +1,141 @@
 import { Link } from 'react-router-dom';
-import { Rocket, GraduationCap, Award, ShoppingBag, ArrowRight } from 'lucide-react';
+import { motion, Variants } from 'framer-motion';
+import { Rocket, GraduationCap, Award, ShoppingBag, ArrowRight, Calendar } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 const initiatives = [
   {
     title: 'Builders Skill Sprint',
-    description: 'Monthly themed challenges with hands-on projects. Learn by building real applications with AWS services.',
+    description: 'Monthly themed challenges with hands-on labs, virtual sessions, and mentorship to build real-world AWS skills.',
     icon: Rocket,
     path: '/skill-sprint',
-    color: 'text-primary',
-    bgColor: 'bg-primary/10',
+    color: 'from-primary/20 to-orange-500/20',
+    iconColor: 'text-primary',
+    highlight: true,
+  },
+  {
+    title: 'Meetups',
+    description: 'Join virtual and in-person events, workshops, and community gatherings to learn and network.',
+    icon: Calendar,
+    path: '/meetups',
+    color: 'from-teal-500/20 to-emerald-500/20',
+    iconColor: 'text-teal-600',
   },
   {
     title: 'College Champs',
     description: 'Empowering students with cloud skills through workshops, mentorship, and certification support.',
     icon: GraduationCap,
     path: '/college-champs',
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
+    color: 'from-blue-500/20 to-indigo-500/20',
+    iconColor: 'text-blue-600',
   },
   {
     title: 'Certification Circle',
-    description: 'Study groups and resources to help you prepare for and pass AWS certifications.',
+    description: 'Study groups, resources, and peer support to help you earn AWS certifications faster.',
     icon: Award,
     path: '/certification-circle',
-    color: 'text-amber-500',
-    bgColor: 'bg-amber-500/10',
+    color: 'from-amber-500/20 to-yellow-500/20',
+    iconColor: 'text-amber-600',
   },
   {
     title: 'Community Store',
-    description: 'Exclusive merchandise and swag for our community members. Redeem your points for rewards.',
+    description: 'Redeem your earned points for exclusive AWS merchandise and community swag.',
     icon: ShoppingBag,
     path: '/store',
-    color: 'text-purple-500',
-    bgColor: 'bg-purple-500/10',
+    color: 'from-purple-500/20 to-pink-500/20',
+    iconColor: 'text-purple-600',
   },
 ];
 
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const cardVariants: Variants = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: { duration: 0.4 }
+  }
+};
+
 export function InitiativesSection() {
   return (
-    <section className="py-16">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold mb-4">Our Initiatives</h2>
+    <section>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+        className="text-center mb-12"
+      >
+        <h2 className="text-2xl md:text-3xl font-bold mb-4">
+          Our <span className="gradient-text">Initiatives</span>
+        </h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Explore our programs designed to help you learn, grow, and connect with the AWS community.
         </p>
-      </div>
+      </motion.div>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <motion.div
+        className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-50px" }}
+      >
         {initiatives.map((initiative) => (
-          <Card key={initiative.title} className="glass-card hover-lift group">
-            <CardHeader>
-              <div className={`w-12 h-12 rounded-lg ${initiative.bgColor} flex items-center justify-center mb-4`}>
-                <initiative.icon className={`h-6 w-6 ${initiative.color}`} />
-              </div>
-              <CardTitle className="text-xl">{initiative.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="mb-4 min-h-[60px]">
-                {initiative.description}
-              </CardDescription>
-              <Button variant="ghost" asChild className="p-0 h-auto group-hover:text-primary">
-                <Link to={initiative.path} className="flex items-center gap-1">
-                  Learn more 
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <motion.div 
+            key={initiative.title} 
+            variants={cardVariants}
+            whileHover={{ y: -8, transition: { duration: 0.2 } }}
+            className={initiative.highlight ? 'sm:col-span-2 lg:col-span-1' : ''}
+          >
+            <Card className={`glass-card h-full relative overflow-hidden group ${initiative.highlight ? 'ring-2 ring-primary/20' : ''}`}>
+              {/* Gradient background */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${initiative.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+              
+              <CardHeader className="relative z-10">
+                <div className="flex items-center gap-3 mb-2">
+                  <motion.div
+                    whileHover={{ rotate: 360 }}
+                    transition={{ duration: 0.5 }}
+                    className={`p-2 rounded-lg bg-muted ${initiative.iconColor}`}
+                  >
+                    <initiative.icon className="h-6 w-6" />
+                  </motion.div>
+                  {initiative.highlight && (
+                    <motion.span
+                      className="text-xs px-2 py-1 rounded-full bg-primary text-primary-foreground font-medium"
+                      animate={{ scale: [1, 1.05, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      Popular
+                    </motion.span>
+                  )}
+                </div>
+                <CardTitle className="text-xl">{initiative.title}</CardTitle>
+                <CardDescription>{initiative.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <Button variant="ghost" className="group/btn p-0 h-auto" asChild>
+                  <Link to={initiative.path} className="flex items-center gap-2">
+                    Explore
+                    <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </section>
   );
 }
