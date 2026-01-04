@@ -18,7 +18,7 @@ import {
   ChevronRight, ChevronDown, Linkedin, User,
   CheckCircle, Image, FileText, PlayCircle
 } from 'lucide-react';
-import { mockSprints, mockForumPosts, Sprint, Session, currentUser } from '@/data/mockData';
+import { mockSprints, mockForumPosts, Sprint, Session, currentUser, mockUsers, getUserById } from '@/data/mockData';
 import { format, parseISO } from 'date-fns';
 
 const getStatusBadge = (status: Sprint['status']) => {
@@ -440,8 +440,9 @@ function SprintDetail({ sprint, onBack }: { sprint: Sprint; onBack: () => void }
       />
 
       <Tabs defaultValue="sessions" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 max-w-md">
+        <TabsList className="grid w-full grid-cols-4 max-w-lg">
           <TabsTrigger value="sessions">Sessions</TabsTrigger>
+          <TabsTrigger value="participants">Participants</TabsTrigger>
           <TabsTrigger value="forum">Discussion</TabsTrigger>
           <TabsTrigger value="submit">Submit</TabsTrigger>
         </TabsList>
@@ -468,6 +469,65 @@ function SprintDetail({ sprint, onBack }: { sprint: Sprint; onBack: () => void }
               </Card>
             )}
           </div>
+        </TabsContent>
+
+        {/* Participants Tab */}
+        <TabsContent value="participants">
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                Registered Participants ({sprint.registeredUsers.length})
+              </CardTitle>
+              <CardDescription>
+                Community members participating in this sprint
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {sprint.registeredUsers.map((userId) => {
+                  const user = getUserById(userId);
+                  if (!user) return null;
+                  return (
+                    <motion.div
+                      key={userId}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    >
+                      <Avatar className="h-12 w-12 border-2 border-primary/20">
+                        <AvatarImage src={user.avatar} alt={user.name} />
+                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <a 
+                          href={`/profile/${user.id}`}
+                          className="font-medium hover:text-primary transition-colors truncate block"
+                        >
+                          {user.name}
+                        </a>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {user.designation || 'Participant'}
+                        </p>
+                        {user.company && (
+                          <p className="text-xs text-muted-foreground truncate">{user.company}</p>
+                        )}
+                      </div>
+                      <Badge variant="secondary" className="shrink-0">
+                        {user.points} pts
+                      </Badge>
+                    </motion.div>
+                  );
+                })}
+              </div>
+              {sprint.registeredUsers.length === 0 && (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No participants registered yet. Be the first!</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Forum Tab */}
@@ -527,9 +587,34 @@ function SprintDetail({ sprint, onBack }: { sprint: Sprint; onBack: () => void }
                             </button>
                             <button className="flex items-center gap-1 hover:text-primary transition-colors">
                               <MessageSquare className="h-4 w-4" />
-                              {post.replies} replies
+                              {post.replies.length} replies
                             </button>
                           </div>
+                          {/* Replies */}
+                          {post.replies.length > 0 && (
+                            <div className="mt-4 pl-4 border-l-2 border-muted space-y-3">
+                              {post.replies.slice(0, 2).map((reply) => (
+                                <div key={reply.id} className="flex gap-3">
+                                  <Avatar className="h-7 w-7">
+                                    <AvatarImage src={reply.userAvatar} />
+                                    <AvatarFallback>{reply.userName.charAt(0)}</AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 text-sm">
+                                      <span className="font-medium">{reply.userName}</span>
+                                      <span className="text-muted-foreground">· {format(parseISO(reply.createdAt), 'MMM d')}</span>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">{reply.content}</p>
+                                  </div>
+                                </div>
+                              ))}
+                              {post.replies.length > 2 && (
+                                <button className="text-sm text-primary hover:underline">
+                                  View all {post.replies.length} replies
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardContent>

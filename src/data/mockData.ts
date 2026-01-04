@@ -136,7 +136,66 @@ export interface ForumPost {
   title: string;
   content: string;
   createdAt: string;
-  replies: number;
+  replies: ForumReply[];
+  likes: number;
+}
+
+export interface ForumReply {
+  id: string;
+  postId: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  content: string;
+  createdAt: string;
+  likes: number;
+}
+
+export interface CertificationGroup {
+  id: string;
+  name: string;
+  level: 'Foundational' | 'Associate' | 'Professional' | 'Specialty';
+  description: string;
+  members: string[];
+  owners: string[];
+  color: string;
+  scheduledSessions: GroupSession[];
+  messages: GroupMessage[];
+}
+
+export interface GroupSession {
+  id: string;
+  groupId: string;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  hostId: string;
+  hostName: string;
+  meetingLink?: string;
+}
+
+export interface GroupMessage {
+  id: string;
+  groupId: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  content: string;
+  createdAt: string;
+  replies: GroupReply[];
+  likes: number;
+  isPinned?: boolean;
+}
+
+export interface GroupReply {
+  id: string;
+  messageId: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  content: string;
+  createdAt: string;
   likes: number;
 }
 
@@ -717,18 +776,30 @@ export const mockSpeakerInvites: SpeakerInvite[] = [
 
 // Generate unified events from sprints and meetups for home page
 export const mockEvents: Event[] = [
-  // From Sprints
+  // Sprint Sessions
   {
     id: 'e1',
-    title: 'Serverless January - Kickoff Session',
-    description: 'Join us for the January Serverless Sprint kickoff session. Learn about the challenge and get started with serverless!',
+    title: 'Introduction to Serverless Architecture',
+    description: 'Learn the fundamentals of serverless computing and AWS Lambda with Priya Sharma.',
     date: '2025-01-05',
     time: '18:00 IST',
     type: 'virtual',
     category: 'sprint',
     attendees: 45,
     linkedEventId: 's1',
-    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=400&fit=crop'
+    image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&h=400&fit=crop'
+  },
+  {
+    id: 'e8',
+    title: 'Building APIs with API Gateway',
+    description: 'Deep dive into REST and WebSocket APIs using Amazon API Gateway with Rahul Verma.',
+    date: '2025-01-15',
+    time: '18:00 IST',
+    type: 'virtual',
+    category: 'sprint',
+    attendees: 42,
+    linkedEventId: 's1',
+    image: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=800&h=400&fit=crop'
   },
   {
     id: 'e2',
@@ -744,15 +815,15 @@ export const mockEvents: Event[] = [
   },
   {
     id: 'e3',
-    title: 'GenAI February - Sprint Launch',
-    description: 'February GenAI Sprint begins! Build AI-powered applications with Amazon Bedrock.',
-    date: '2025-02-01',
+    title: 'Getting Started with Amazon Bedrock',
+    description: 'Introduction to foundation models and Amazon Bedrock. Build AI-powered apps!',
+    date: '2025-02-08',
     time: '18:00 IST',
     type: 'virtual',
     category: 'sprint',
     attendees: 32,
     linkedEventId: 's2',
-    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop'
+    image: 'https://images.unsplash.com/photo-1676299081847-824916de030a?w=800&h=400&fit=crop'
   },
   {
     id: 'e4',
@@ -792,15 +863,15 @@ export const mockEvents: Event[] = [
   },
   {
     id: 'e7',
-    title: 'Security December - Sprint Finale',
-    description: 'Final session of the Security Sprint with project showcases.',
-    date: '2024-12-28',
+    title: 'AWS IAM Deep Dive',
+    description: 'Understanding IAM policies, roles, and best practices for secure AWS architectures.',
+    date: '2024-12-10',
     time: '18:00 IST',
     type: 'virtual',
     category: 'sprint',
     attendees: 38,
     linkedEventId: 's3',
-    image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&h=400&fit=crop'
+    image: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&h=400&fit=crop'
   }
 ];
 
@@ -815,7 +886,10 @@ export const mockForumPosts: ForumPost[] = [
     title: 'Stuck with Lambda cold starts - any tips?',
     content: 'I am experiencing significant cold start times with my Lambda function. Has anyone found effective ways to reduce this? I have tried provisioned concurrency but it is expensive for my use case.',
     createdAt: '2025-01-08',
-    replies: 12,
+    replies: [
+      { id: 'r1', postId: 'f1', userId: '2', userName: 'Rahul Verma', userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul', content: 'Try using SnapStart if you are using Java! It reduces cold starts significantly.', createdAt: '2025-01-08', likes: 5 },
+      { id: 'r2', postId: 'f1', userId: '1', userName: 'Priya Sharma', userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya', content: 'Keep your package size small - only include what you need. Also consider using layers for shared dependencies.', createdAt: '2025-01-09', likes: 3 }
+    ],
     likes: 8
   },
   {
@@ -827,7 +901,9 @@ export const mockForumPosts: ForumPost[] = [
     title: 'Best practices for DynamoDB single-table design',
     content: 'Sharing my learnings from implementing single-table design in my sprint project. Key takeaway: access patterns first, then model your data!',
     createdAt: '2025-01-10',
-    replies: 7,
+    replies: [
+      { id: 'r3', postId: 'f2', userId: '3', userName: 'Ananya Patel', userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya', content: 'Great tips! I found the access pattern analysis really helpful.', createdAt: '2025-01-10', likes: 2 }
+    ],
     likes: 15
   },
   {
@@ -839,8 +915,98 @@ export const mockForumPosts: ForumPost[] = [
     title: 'Sprint Challenge Hints - Week 2',
     content: 'Here are some hints for this week\'s challenge. Remember to use Step Functions for orchestration! Also check out the new EventBridge Scheduler for time-based workflows.',
     createdAt: '2025-01-12',
-    replies: 23,
+    replies: [],
     likes: 42
+  }
+];
+
+// Mock Certification Groups
+export const mockCertificationGroups: CertificationGroup[] = [
+  {
+    id: 'cg1',
+    name: 'Cloud Practitioner',
+    level: 'Foundational',
+    description: 'Start your AWS journey here! Perfect for beginners looking to understand cloud concepts.',
+    members: ['3', '4', '5', '6', '7', '8'],
+    owners: ['1', 'admin1'],
+    color: 'bg-green-500/10 text-green-600 border-green-500/30',
+    scheduledSessions: [
+      { id: 'gs1', groupId: 'cg1', title: 'Weekly Study Session', description: 'Going through Domain 1: Cloud Concepts', date: '2025-01-18', time: '19:00 IST', hostId: '1', hostName: 'Priya Sharma', meetingLink: 'https://meet.example.com/cp-study' }
+    ],
+    messages: [
+      { id: 'gm1', groupId: 'cg1', userId: '1', userName: 'Priya Sharma', userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya', content: 'Welcome everyone! Let us use this channel to discuss Cloud Practitioner exam prep. Share resources, ask questions, and support each other!', createdAt: '2025-01-01', replies: [
+        { id: 'gr1', messageId: 'gm1', userId: '5', userName: 'Sneha Reddy', userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sneha', content: 'Thanks for setting this up! Super helpful.', createdAt: '2025-01-01', likes: 3 }
+      ], likes: 12, isPinned: true },
+      { id: 'gm2', groupId: 'cg1', userId: '6', userName: 'Arjun Nair', userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun', content: 'Anyone have good resources for understanding the shared responsibility model?', createdAt: '2025-01-05', replies: [
+        { id: 'gr2', messageId: 'gm2', userId: '1', userName: 'Priya Sharma', userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya', content: 'Check out the AWS Well-Architected Framework whitepaper. It explains this really well!', createdAt: '2025-01-05', likes: 5 },
+        { id: 'gr3', messageId: 'gm2', userId: '3', userName: 'Ananya Patel', userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya', content: 'Also Stephane Maarek has a great video on this topic.', createdAt: '2025-01-05', likes: 4 }
+      ], likes: 6 }
+    ]
+  },
+  {
+    id: 'cg2',
+    name: 'Solutions Architect Associate',
+    level: 'Associate',
+    description: 'Design distributed systems on AWS. Most popular certification for architects and developers.',
+    members: ['1', '2', '3', '4', '5'],
+    owners: ['2', 'admin1'],
+    color: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
+    scheduledSessions: [
+      { id: 'gs2', groupId: 'cg2', title: 'Practice Exam Review', description: 'Reviewing answers from practice test #3', date: '2025-01-20', time: '18:00 IST', hostId: '2', hostName: 'Rahul Verma' }
+    ],
+    messages: [
+      { id: 'gm3', groupId: 'cg2', userId: '2', userName: 'Rahul Verma', userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul', content: 'This week we are focusing on VPC and networking concepts. Make sure to understand VPC peering vs Transit Gateway!', createdAt: '2025-01-10', replies: [], likes: 8, isPinned: true }
+    ]
+  },
+  {
+    id: 'cg3',
+    name: 'Developer Associate',
+    level: 'Associate',
+    description: 'Focus on developing and maintaining AWS applications. Great for developers.',
+    members: ['2', '3', '5', '6'],
+    owners: ['1'],
+    color: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
+    scheduledSessions: [],
+    messages: [
+      { id: 'gm4', groupId: 'cg3', userId: '5', userName: 'Sneha Reddy', userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sneha', content: 'Just passed my DVA-C02! Happy to share my study notes.', createdAt: '2025-01-08', replies: [
+        { id: 'gr4', messageId: 'gm4', userId: '6', userName: 'Arjun Nair', userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun', content: 'Congrats! Would love to see your notes!', createdAt: '2025-01-08', likes: 2 }
+      ], likes: 15 }
+    ]
+  },
+  {
+    id: 'cg4',
+    name: 'SysOps Administrator',
+    level: 'Associate',
+    description: 'Operations and deployment on AWS. Perfect for sysadmins transitioning to cloud.',
+    members: ['2', '4', '7'],
+    owners: ['admin1'],
+    color: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
+    scheduledSessions: [],
+    messages: []
+  },
+  {
+    id: 'cg5',
+    name: 'Solutions Architect Professional',
+    level: 'Professional',
+    description: 'Advanced architectural concepts. Recommended after SAA certification.',
+    members: ['1', '2'],
+    owners: ['1'],
+    color: 'bg-purple-500/10 text-purple-600 border-purple-500/30',
+    scheduledSessions: [
+      { id: 'gs3', groupId: 'cg5', title: 'Case Study Deep Dive', description: 'Analyzing complex architecture scenarios', date: '2025-01-25', time: '20:00 IST', hostId: '1', hostName: 'Priya Sharma' }
+    ],
+    messages: []
+  },
+  {
+    id: 'cg6',
+    name: 'DevOps Engineer Professional',
+    level: 'Professional',
+    description: 'CI/CD and automation on AWS. Combines development and operations expertise.',
+    members: ['2'],
+    owners: ['2'],
+    color: 'bg-purple-500/10 text-purple-600 border-purple-500/30',
+    scheduledSessions: [],
+    messages: []
   }
 ];
 
