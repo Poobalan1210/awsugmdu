@@ -13,6 +13,7 @@ import CertificationCircle from "./pages/CertificationCircle";
 import Store from "./pages/Store";
 import Meetups from "./pages/Meetups";
 import Admin from "./pages/Admin";
+import SpeakerInvite from "./pages/SpeakerInvite";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/store" element={<Store />} />
           <Route path="/meetups" element={<Meetups />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/speaker-invite/:inviteId" element={<SpeakerInvite />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

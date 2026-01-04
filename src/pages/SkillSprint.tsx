@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,12 +10,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Rocket, Calendar, Users, Github, MessageSquare, 
   Video, Send, ThumbsUp, Clock, ExternalLink,
-  ChevronRight
+  ChevronRight, ChevronDown, Linkedin, User,
+  CheckCircle, Image, FileText, PlayCircle
 } from 'lucide-react';
-import { mockSprints, mockForumPosts, Sprint } from '@/data/mockData';
+import { mockSprints, mockForumPosts, Sprint, Session, currentUser } from '@/data/mockData';
 import { format, parseISO } from 'date-fns';
 
 const getStatusBadge = (status: Sprint['status']) => {
@@ -29,55 +32,358 @@ const getStatusBadge = (status: Sprint['status']) => {
   }
 };
 
+function SessionCard({ session, isExpanded, onToggle }: { 
+  session: Session; 
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <Collapsible open={isExpanded} onOpenChange={onToggle}>
+      <Card className="glass-card overflow-hidden">
+        <CollapsibleTrigger asChild>
+          <CardContent className="p-4 cursor-pointer hover:bg-muted/30 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-12 w-12 border-2 border-primary/30">
+                  <AvatarImage src={session.speakerPhoto} alt={session.speaker} />
+                  <AvatarFallback>{session.speaker.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-semibold text-lg">{session.title}</h3>
+                  <p className="text-sm text-muted-foreground">{session.speaker}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-medium">{format(parseISO(session.date), 'MMM d, yyyy')}</p>
+                  <p className="text-xs text-muted-foreground">{session.time}</p>
+                </div>
+                <motion.div
+                  animate={{ rotate: isExpanded ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                </motion.div>
+              </div>
+            </div>
+          </CardContent>
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="border-t border-border">
+              {/* Session Poster */}
+              {session.posterImage && (
+                <div className="relative h-48 overflow-hidden">
+                  <img 
+                    src={session.posterImage} 
+                    alt={session.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <Badge variant="secondary" className="mb-2">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {session.duration || '90 minutes'}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+              
+              <div className="p-6 space-y-6">
+                {/* Speaker Info */}
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex items-start gap-4">
+                    <Avatar className="h-20 w-20 border-4 border-primary/20">
+                      <AvatarImage src={session.speakerPhoto} alt={session.speaker} />
+                      <AvatarFallback className="text-2xl">{session.speaker.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h4 className="font-bold text-lg">{session.speaker}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {session.speakerDesignation}
+                        {session.speakerCompany && ` at ${session.speakerCompany}`}
+                      </p>
+                      {session.speakerBio && (
+                        <p className="text-sm text-muted-foreground mt-2">{session.speakerBio}</p>
+                      )}
+                      {session.speakerLinkedIn && (
+                        <a 
+                          href={session.speakerLinkedIn} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-2"
+                        >
+                          <Linkedin className="h-4 w-4" />
+                          Connect on LinkedIn
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Session Details */}
+                <div>
+                  <h4 className="font-semibold mb-2">About this Session</h4>
+                  <p className="text-muted-foreground">{session.description}</p>
+                </div>
+
+                {/* Agenda */}
+                {session.agenda && session.agenda.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-3">Session Agenda</h4>
+                    <ul className="space-y-2">
+                      {session.agenda.map((item, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm">
+                          <CheckCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-3 pt-4 border-t">
+                  {session.meetingLink && (
+                    <Button asChild>
+                      <a href={session.meetingLink} target="_blank" rel="noopener noreferrer">
+                        <Video className="h-4 w-4 mr-2" />
+                        Join Session
+                      </a>
+                    </Button>
+                  )}
+                  {session.recordingUrl && (
+                    <Button variant="outline" asChild>
+                      <a href={session.recordingUrl} target="_blank" rel="noopener noreferrer">
+                        <PlayCircle className="h-4 w-4 mr-2" />
+                        Watch Recording
+                      </a>
+                    </Button>
+                  )}
+                  {session.slidesUrl && (
+                    <Button variant="outline" asChild>
+                      <a href={session.slidesUrl} target="_blank" rel="noopener noreferrer">
+                        <FileText className="h-4 w-4 mr-2" />
+                        View Slides
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  );
+}
+
 function SprintCard({ sprint, onSelect }: { sprint: Sprint; onSelect: () => void }) {
   return (
-    <Card className="glass-card hover-lift cursor-pointer" onClick={onSelect}>
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          {getStatusBadge(sprint.status)}
-          <span className="text-sm text-muted-foreground">
-            {format(parseISO(sprint.startDate), 'MMM yyyy')}
-          </span>
-        </div>
-        
-        <h3 className="text-xl font-bold mb-2">{sprint.title}</h3>
-        <Badge variant="outline" className="mb-4">{sprint.theme}</Badge>
-        
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-          {sprint.description}
-        </p>
-        
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Users className="h-4 w-4" />
-            {sprint.participants}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card className="glass-card hover-lift cursor-pointer h-full" onClick={onSelect}>
+        {sprint.posterImage && (
+          <div className="relative h-40 overflow-hidden rounded-t-lg">
+            <img 
+              src={sprint.posterImage} 
+              alt={sprint.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+            <div className="absolute top-3 left-3">
+              {getStatusBadge(sprint.status)}
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Video className="h-4 w-4" />
-            {sprint.sessions.length} sessions
+        )}
+        <CardContent className={sprint.posterImage ? "p-5" : "p-6"}>
+          {!sprint.posterImage && (
+            <div className="flex items-start justify-between mb-4">
+              {getStatusBadge(sprint.status)}
+              <span className="text-sm text-muted-foreground">
+                {format(parseISO(sprint.startDate), 'MMM yyyy')}
+              </span>
+            </div>
+          )}
+          
+          <h3 className="text-xl font-bold mb-2">{sprint.title}</h3>
+          <Badge variant="outline" className="mb-4">{sprint.theme}</Badge>
+          
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+            {sprint.description}
+          </p>
+          
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              {sprint.participants}
+            </div>
+            <div className="flex items-center gap-1">
+              <Video className="h-4 w-4" />
+              {sprint.sessions.length} sessions
+            </div>
           </div>
-        </div>
+          
+          <Button className="w-full mt-4" variant={sprint.status === 'active' ? 'default' : 'outline'}>
+            {sprint.status === 'active' ? 'Join Sprint' : 'View Details'}
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+function JoinSprintDialog({ sprint, open, onOpenChange }: { 
+  sprint: Sprint; 
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [formData, setFormData] = useState({
+    name: currentUser.name,
+    email: currentUser.email,
+    designation: currentUser.designation || '',
+    company: currentUser.company || '',
+    experience: '',
+    expectations: ''
+  });
+
+  const isRegistered = sprint.registeredUsers.includes(currentUser.id);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Joining sprint:', sprint.id, formData);
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Join {sprint.title}</DialogTitle>
+          <DialogDescription>
+            Register to participate in this sprint and access all resources.
+          </DialogDescription>
+        </DialogHeader>
         
-        <Button className="w-full mt-4" variant={sprint.status === 'active' ? 'default' : 'outline'}>
-          {sprint.status === 'active' ? 'Join Sprint' : 'View Details'}
-          <ChevronRight className="h-4 w-4 ml-1" />
-        </Button>
-      </CardContent>
-    </Card>
+        {isRegistered ? (
+          <div className="text-center py-8">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">You're Already Registered!</h3>
+            <p className="text-muted-foreground">
+              You have access to all sprint resources, sessions, and the discussion forum.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Full Name</Label>
+                <Input 
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input 
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Designation</Label>
+                <Input 
+                  value={formData.designation}
+                  onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                  placeholder="e.g., Software Engineer"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Company</Label>
+                <Input 
+                  value={formData.company}
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                  placeholder="e.g., Tech Corp"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Experience with {sprint.theme}</Label>
+              <select 
+                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                value={formData.experience}
+                onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+              >
+                <option value="">Select your experience level</option>
+                <option value="beginner">Beginner - Just starting out</option>
+                <option value="intermediate">Intermediate - Some experience</option>
+                <option value="advanced">Advanced - Experienced practitioner</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>What do you hope to learn?</Label>
+              <Textarea 
+                value={formData.expectations}
+                onChange={(e) => setFormData({ ...formData, expectations: e.target.value })}
+                placeholder="Share your learning goals..."
+                rows={3}
+              />
+            </div>
+            <Button type="submit" className="w-full">
+              <Rocket className="h-4 w-4 mr-2" />
+              Join Sprint
+            </Button>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
 function SprintDetail({ sprint, onBack }: { sprint: Sprint; onBack: () => void }) {
   const forumPosts = mockForumPosts.filter((p) => p.sprintId === sprint.id);
+  const [expandedSession, setExpandedSession] = useState<string | null>(null);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const isRegistered = sprint.registeredUsers.includes(currentUser.id);
 
   return (
-    <div className="space-y-8">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-8"
+    >
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={onBack}>← Back</Button>
       </div>
 
       <div className="glass-card p-6 md:p-8 rounded-lg">
+        {sprint.posterImage && (
+          <div className="relative h-48 md:h-64 -mx-6 -mt-6 md:-mx-8 md:-mt-8 mb-6 overflow-hidden rounded-t-lg">
+            <img 
+              src={sprint.posterImage} 
+              alt={sprint.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+          </div>
+        )}
+        
         <div className="flex flex-wrap items-center gap-4 mb-4">
           {getStatusBadge(sprint.status)}
           <Badge variant="outline" className="text-base">{sprint.theme}</Badge>
@@ -111,13 +417,27 @@ function SprintDetail({ sprint, onBack }: { sprint: Sprint; onBack: () => void }
           )}
         </div>
 
-        {sprint.status === 'active' && (
-          <Button className="mt-6" size="lg">
-            <Rocket className="h-4 w-4 mr-2" />
-            Join This Sprint
-          </Button>
+        {sprint.status !== 'completed' && (
+          <div className="mt-6 flex gap-3">
+            <Button size="lg" onClick={() => setJoinDialogOpen(true)}>
+              <Rocket className="h-4 w-4 mr-2" />
+              {isRegistered ? 'Already Joined' : 'Join This Sprint'}
+            </Button>
+            {isRegistered && (
+              <Badge variant="secondary" className="flex items-center gap-1 px-4">
+                <CheckCircle className="h-4 w-4" />
+                Registered
+              </Badge>
+            )}
+          </div>
         )}
       </div>
+
+      <JoinSprintDialog 
+        sprint={sprint} 
+        open={joinDialogOpen} 
+        onOpenChange={setJoinDialogOpen}
+      />
 
       <Tabs defaultValue="sessions" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3 max-w-md">
@@ -128,37 +448,25 @@ function SprintDetail({ sprint, onBack }: { sprint: Sprint; onBack: () => void }
 
         {/* Sessions Tab */}
         <TabsContent value="sessions">
-          <div className="grid gap-4">
+          <div className="space-y-4">
             {sprint.sessions.map((session) => (
-              <Card key={session.id} className="glass-card">
-                <CardContent className="p-6">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                      <h3 className="font-semibold text-lg mb-2">{session.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-3">{session.description}</p>
-                      <div className="flex flex-wrap gap-4 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          {format(parseISO(session.date), 'EEEE, MMMM d')}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          {session.time}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          Speaker: {session.speaker}
-                        </div>
-                      </div>
-                    </div>
-                    <Button variant="outline">
-                      <Video className="h-4 w-4 mr-2" />
-                      Join Session
-                    </Button>
-                  </div>
+              <SessionCard 
+                key={session.id} 
+                session={session}
+                isExpanded={expandedSession === session.id}
+                onToggle={() => setExpandedSession(
+                  expandedSession === session.id ? null : session.id
+                )}
+              />
+            ))}
+            {sprint.sessions.length === 0 && (
+              <Card className="glass-card">
+                <CardContent className="p-8 text-center">
+                  <Video className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Sessions will be announced soon!</p>
                 </CardContent>
               </Card>
-            ))}
+            )}
           </div>
         </TabsContent>
 
@@ -179,8 +487,8 @@ function SprintDetail({ sprint, onBack }: { sprint: Sprint; onBack: () => void }
               <div className="mb-6 p-4 rounded-lg bg-muted/50">
                 <div className="flex gap-4">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=You" />
-                    <AvatarFallback>Y</AvatarFallback>
+                    <AvatarImage src={currentUser.avatar} />
+                    <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-3">
                     <Input placeholder="Post title..." />
@@ -294,7 +602,7 @@ function SprintDetail({ sprint, onBack }: { sprint: Sprint; onBack: () => void }
                       <div key={sub.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${sub.userName}`} />
+                            <AvatarImage src={sub.userAvatar} />
                             <AvatarFallback>{sub.userName.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div>
@@ -305,7 +613,7 @@ function SprintDetail({ sprint, onBack }: { sprint: Sprint; onBack: () => void }
                           </div>
                         </div>
                         <Badge variant={sub.status === 'approved' ? 'default' : 'secondary'}>
-                          +{sub.points} pts
+                          {sub.status === 'approved' ? `+${sub.points} pts` : sub.status}
                         </Badge>
                       </div>
                     ))}
@@ -316,7 +624,7 @@ function SprintDetail({ sprint, onBack }: { sprint: Sprint; onBack: () => void }
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </motion.div>
   );
 }
 
@@ -332,75 +640,109 @@ export default function SkillSprint() {
       <Header />
       
       <main className="flex-1 container mx-auto px-4 py-8">
-        {selectedSprint ? (
-          <SprintDetail sprint={selectedSprint} onBack={() => setSelectedSprint(null)} />
-        ) : (
-          <>
-            {/* Hero */}
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-                <Rocket className="h-4 w-4" />
-                Monthly Hands-on Challenges
-              </div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-4">Builders Skill Sprint</h1>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Each month, dive into a specific AWS theme with virtual sessions, hands-on challenges, 
-                and a supportive community. Build real projects and earn points!
-              </p>
-            </div>
-
-            {/* Active Sprints */}
-            {activeSprints.length > 0 && (
-              <section className="mb-12">
-                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
-                  Active Sprint
-                </h2>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {activeSprints.map((sprint) => (
-                    <SprintCard 
-                      key={sprint.id} 
-                      sprint={sprint} 
-                      onSelect={() => setSelectedSprint(sprint)}
-                    />
-                  ))}
+        <AnimatePresence mode="wait">
+          {selectedSprint ? (
+            <SprintDetail 
+              key="detail"
+              sprint={selectedSprint} 
+              onBack={() => setSelectedSprint(null)} 
+            />
+          ) : (
+            <motion.div
+              key="list"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              {/* Hero */}
+              <motion.div 
+                className="text-center mb-12"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+                  <Rocket className="h-4 w-4" />
+                  Monthly Hands-on Challenges
                 </div>
-              </section>
-            )}
+                <h1 className="text-3xl md:text-4xl font-bold mb-4">Builders Skill Sprint</h1>
+                <p className="text-muted-foreground max-w-2xl mx-auto">
+                  Each month, dive into a specific AWS theme with virtual sessions, hands-on challenges, 
+                  and a supportive community. Build real projects and earn points!
+                </p>
+              </motion.div>
 
-            {/* Upcoming Sprints */}
-            {upcomingSprints.length > 0 && (
-              <section className="mb-12">
-                <h2 className="text-2xl font-bold mb-6">Upcoming Sprints</h2>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {upcomingSprints.map((sprint) => (
-                    <SprintCard 
-                      key={sprint.id} 
-                      sprint={sprint} 
-                      onSelect={() => setSelectedSprint(sprint)}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
+              {/* Active Sprints */}
+              {activeSprints.length > 0 && (
+                <section className="mb-12">
+                  <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                    Active Sprint
+                  </h2>
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {activeSprints.map((sprint, index) => (
+                      <motion.div
+                        key={sprint.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <SprintCard 
+                          sprint={sprint} 
+                          onSelect={() => setSelectedSprint(sprint)}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                </section>
+              )}
 
-            {/* Completed Sprints */}
-            {completedSprints.length > 0 && (
-              <section>
-                <h2 className="text-2xl font-bold mb-6">Past Sprints</h2>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {completedSprints.map((sprint) => (
-                    <SprintCard 
-                      key={sprint.id} 
-                      sprint={sprint} 
-                      onSelect={() => setSelectedSprint(sprint)}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-          </>
-        )}
+              {/* Upcoming Sprints */}
+              {upcomingSprints.length > 0 && (
+                <section className="mb-12">
+                  <h2 className="text-2xl font-bold mb-6">Upcoming Sprints</h2>
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {upcomingSprints.map((sprint, index) => (
+                      <motion.div
+                        key={sprint.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <SprintCard 
+                          sprint={sprint} 
+                          onSelect={() => setSelectedSprint(sprint)}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Completed Sprints */}
+              {completedSprints.length > 0 && (
+                <section>
+                  <h2 className="text-2xl font-bold mb-6">Past Sprints</h2>
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {completedSprints.map((sprint, index) => (
+                      <motion.div
+                        key={sprint.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <SprintCard 
+                          sprint={sprint} 
+                          onSelect={() => setSelectedSprint(sprint)}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       <Footer />

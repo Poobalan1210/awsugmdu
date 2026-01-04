@@ -14,12 +14,13 @@ import { Badge } from '@/components/ui/badge';
 import logo from '@/assets/logo.png';
 import { currentUser } from '@/data/mockData';
 
+// Sorted alphabetically with Home first
 const navItems = [
   { name: 'Home', path: '/' },
-  { name: 'Skill Sprint', path: '/skill-sprint' },
-  { name: 'Meetups', path: '/meetups' },
-  { name: 'College Champs', path: '/college-champs' },
+  { name: 'Builders Skill Sprint', path: '/skill-sprint' },
   { name: 'Certification Circle', path: '/certification-circle' },
+  { name: 'College Champs', path: '/college-champs' },
+  { name: 'Meetups', path: '/meetups' },
   { name: 'Store', path: '/store' },
 ];
 
@@ -52,7 +53,7 @@ export function Header({ isLoggedIn = true, onLogout }: HeaderProps) {
             <Link
               key={item.path}
               to={item.path}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 location.pathname === item.path
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -64,7 +65,7 @@ export function Header({ isLoggedIn = true, onLogout }: HeaderProps) {
           {(isAdmin || isSpeaker) && (
             <Link
               to="/admin"
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${
                 location.pathname.startsWith('/admin')
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted'
