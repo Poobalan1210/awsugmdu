@@ -45,6 +45,16 @@ export interface Sprint {
   posterImage?: string;
 }
 
+export interface SessionPerson {
+  userId?: string;
+  name: string;
+  photo?: string;
+  designation?: string;
+  company?: string;
+  email?: string;
+  linkedIn?: string;
+}
+
 export interface Session {
   id: string;
   title: string;
@@ -55,6 +65,9 @@ export interface Session {
   speakerCompany?: string;
   speakerBio?: string;
   speakerLinkedIn?: string;
+  hosts?: SessionPerson[];
+  speakers?: SessionPerson[];
+  volunteers?: SessionPerson[];
   date: string;
   time: string;
   duration?: string;
@@ -455,6 +468,34 @@ export const mockSprints: Sprint[] = [
         speakerCompany: 'Tech Corp',
         speakerBio: 'AWS Community Builder with 5+ years of experience building serverless applications at scale.',
         speakerLinkedIn: 'https://linkedin.com/in/priya-sharma',
+        hosts: [
+          {
+            userId: 'admin1',
+            name: 'Admin User',
+            photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
+            designation: 'Community Lead',
+            company: 'AWS User Group'
+          }
+        ],
+        speakers: [
+          {
+            userId: '1',
+            name: 'Priya Sharma',
+            photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya',
+            designation: 'Solutions Architect',
+            company: 'Tech Corp',
+            linkedIn: 'https://linkedin.com/in/priya-sharma'
+          }
+        ],
+        volunteers: [
+          {
+            userId: '2',
+            name: 'Rahul Verma',
+            photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul',
+            designation: 'DevOps Lead',
+            company: 'Cloud Solutions Inc'
+          }
+        ],
         date: '2025-01-05',
         time: '18:00 IST',
         duration: '90 minutes',
@@ -479,6 +520,34 @@ export const mockSprints: Sprint[] = [
         speakerCompany: 'Cloud Solutions Inc',
         speakerBio: 'DevOps engineer specializing in AWS serverless and container orchestration.',
         speakerLinkedIn: 'https://linkedin.com/in/rahul-verma',
+        hosts: [
+          {
+            userId: '1',
+            name: 'Priya Sharma',
+            photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya',
+            designation: 'Solutions Architect',
+            company: 'Tech Corp'
+          }
+        ],
+        speakers: [
+          {
+            userId: '2',
+            name: 'Rahul Verma',
+            photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul',
+            designation: 'DevOps Lead',
+            company: 'Cloud Solutions Inc',
+            linkedIn: 'https://linkedin.com/in/rahul-verma'
+          }
+        ],
+        volunteers: [
+          {
+            userId: '3',
+            name: 'Ananya Patel',
+            photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya',
+            designation: 'Cloud Engineer',
+            company: 'DataFlow Systems'
+          }
+        ],
         date: '2025-01-15',
         time: '18:00 IST',
         duration: '90 minutes',
@@ -558,6 +627,25 @@ export const mockSprints: Sprint[] = [
         speakerDesignation: 'Cloud Engineer',
         speakerCompany: 'DataFlow Systems',
         speakerBio: 'Solutions Architect with a passion for AI/ML and cloud technologies.',
+        hosts: [
+          {
+            userId: 'admin1',
+            name: 'Admin User',
+            photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
+            designation: 'Community Lead',
+            company: 'AWS User Group'
+          }
+        ],
+        speakers: [
+          {
+            userId: '3',
+            name: 'Ananya Patel',
+            photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya',
+            designation: 'Cloud Engineer',
+            company: 'DataFlow Systems'
+          }
+        ],
+        volunteers: [],
         date: '2025-02-08',
         time: '18:00 IST',
         duration: '90 minutes',
@@ -596,6 +684,40 @@ export const mockSprints: Sprint[] = [
         speakerDesignation: 'Security Consultant',
         speakerCompany: 'SecureCloud Ltd',
         speakerBio: 'Security specialist with expertise in AWS IAM, KMS, and compliance frameworks.',
+        hosts: [
+          {
+            userId: 'admin1',
+            name: 'Admin User',
+            photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
+            designation: 'Community Lead',
+            company: 'AWS User Group'
+          }
+        ],
+        speakers: [
+          {
+            userId: '4',
+            name: 'Vikram Singh',
+            photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Vikram',
+            designation: 'Security Consultant',
+            company: 'SecureCloud Ltd'
+          }
+        ],
+        volunteers: [
+          {
+            userId: '1',
+            name: 'Priya Sharma',
+            photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya',
+            designation: 'Solutions Architect',
+            company: 'Tech Corp'
+          },
+          {
+            userId: '2',
+            name: 'Rahul Verma',
+            photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul',
+            designation: 'DevOps Lead',
+            company: 'Cloud Solutions Inc'
+          }
+        ],
         date: '2024-12-10',
         time: '18:00 IST',
         duration: '120 minutes',

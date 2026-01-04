@@ -18,6 +18,7 @@ import {
   ChevronRight, ChevronDown, Linkedin, User,
   CheckCircle, Image, FileText, PlayCircle
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { mockSprints, mockForumPosts, Sprint, Session, currentUser, mockUsers, getUserById } from '@/data/mockData';
 import { format, parseISO } from 'date-fns';
 
@@ -45,12 +46,23 @@ function SessionCard({ session, isExpanded, onToggle }: {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <Avatar className="h-12 w-12 border-2 border-primary/30">
-                  <AvatarImage src={session.speakerPhoto} alt={session.speaker} />
-                  <AvatarFallback>{session.speaker.charAt(0)}</AvatarFallback>
+                  <AvatarImage 
+                    src={session.speakers && session.speakers.length > 0 ? session.speakers[0].photo : session.speakerPhoto} 
+                    alt={session.speakers && session.speakers.length > 0 ? session.speakers[0].name : session.speaker} 
+                  />
+                  <AvatarFallback>
+                    {session.speakers && session.speakers.length > 0 
+                      ? session.speakers[0].name.charAt(0) 
+                      : session.speaker.charAt(0)}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="font-semibold text-lg">{session.title}</h3>
-                  <p className="text-sm text-muted-foreground">{session.speaker}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {session.speakers && session.speakers.length > 0 
+                      ? session.speakers.map(s => s.name).join(', ')
+                      : session.speaker}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -95,34 +107,109 @@ function SessionCard({ session, isExpanded, onToggle }: {
               )}
               
               <div className="p-6 space-y-6">
-                {/* Speaker Info */}
-                <div className="flex flex-col md:flex-row gap-6">
-                  <div className="flex items-start gap-4">
-                    <Avatar className="h-20 w-20 border-4 border-primary/20">
-                      <AvatarImage src={session.speakerPhoto} alt={session.speaker} />
-                      <AvatarFallback className="text-2xl">{session.speaker.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h4 className="font-bold text-lg">{session.speaker}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {session.speakerDesignation}
-                        {session.speakerCompany && ` at ${session.speakerCompany}`}
-                      </p>
-                      {session.speakerBio && (
-                        <p className="text-sm text-muted-foreground mt-2">{session.speakerBio}</p>
-                      )}
-                      {session.speakerLinkedIn && (
-                        <a 
-                          href={session.speakerLinkedIn} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-2"
-                        >
-                          <Linkedin className="h-4 w-4" />
-                          Connect on LinkedIn
-                        </a>
-                      )}
-                    </div>
+                {/* Session People */}
+                <div>
+                  <h4 className="font-semibold mb-4">Session Team</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Hosts */}
+                    {session.hosts && session.hosts.length > 0 && (
+                      <>
+                        {session.hosts.map((host) => (
+                          <div key={host.userId} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage src={host.photo} />
+                              <AvatarFallback>{host.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                {host.userId ? (
+                                  <Link 
+                                    to={`/profile/${host.userId}`}
+                                    className="font-medium hover:text-primary transition-colors"
+                                  >
+                                    {host.name}
+                                  </Link>
+                                ) : (
+                                  <span className="font-medium">{host.name}</span>
+                                )}
+                                <Badge variant="outline" className="text-xs">Host</Badge>
+                              </div>
+                              {host.designation && (
+                                <p className="text-xs text-muted-foreground">{host.designation}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+
+                    {/* Speakers */}
+                    {session.speakers && session.speakers.length > 0 && (
+                      <>
+                        {session.speakers.map((speaker) => (
+                          <div key={speaker.userId} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <Avatar className="h-12 w-12 border-2 border-primary/30">
+                              <AvatarImage src={speaker.photo} alt={speaker.name} />
+                              <AvatarFallback>{speaker.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                {speaker.userId ? (
+                                  <Link 
+                                    to={`/profile/${speaker.userId}`}
+                                    className="font-medium hover:text-primary transition-colors"
+                                  >
+                                    {speaker.name}
+                                  </Link>
+                                ) : (
+                                  <span className="font-medium">{speaker.name}</span>
+                                )}
+                                <Badge variant="default" className="text-xs">Speaker</Badge>
+                              </div>
+                              {speaker.designation && (
+                                <p className="text-xs text-muted-foreground">
+                                  {speaker.designation}
+                                  {speaker.company && ` at ${speaker.company}`}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+
+                    {/* Volunteers */}
+                    {session.volunteers && session.volunteers.length > 0 && (
+                      <>
+                        {session.volunteers.map((volunteer) => (
+                          <div key={volunteer.userId} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage src={volunteer.photo} />
+                              <AvatarFallback>{volunteer.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                {volunteer.userId ? (
+                                  <Link 
+                                    to={`/profile/${volunteer.userId}`}
+                                    className="font-medium hover:text-primary transition-colors"
+                                  >
+                                    {volunteer.name}
+                                  </Link>
+                                ) : (
+                                  <span className="font-medium">{volunteer.name}</span>
+                                )}
+                                <Badge variant="secondary" className="text-xs">Volunteer</Badge>
+                              </div>
+                              {volunteer.designation && (
+                                <p className="text-xs text-muted-foreground">{volunteer.designation}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+
                   </div>
                 </div>
 

@@ -15,9 +15,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { 
   Plus, Calendar, Users, CheckCircle, XCircle, Clock,
   Rocket, ExternalLink, MessageSquare, Award, Link2,
-  Copy, Mail, Edit, Trash2, Eye, FileText, User
+  Copy, Mail, Edit, Trash2, Eye, FileText, User, Video,
+  Upload, X, UserPlus, Check, ChevronDown
 } from 'lucide-react';
-import { mockSprints, mockMeetups, currentUser, Submission, generateSpeakerInviteLink } from '@/data/mockData';
+import { mockSprints, mockMeetups, currentUser, Submission, generateSpeakerInviteLink, Sprint, Session, SessionPerson, mockUsers, User as UserType } from '@/data/mockData';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -306,6 +309,563 @@ function CreateSprintDialog() {
             />
           </div>
           <Button type="submit" className="w-full">Create Sprint</Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Helper function to convert User to SessionPerson
+const userToSessionPerson = (user: UserType): SessionPerson => ({
+  userId: user.id,
+  name: user.name,
+  photo: user.avatar,
+  email: user.email,
+  designation: user.designation,
+  company: user.company,
+  linkedIn: user.linkedIn
+});
+
+// User Select Component for single selection
+function UserSelect({
+  selectedUser,
+  onSelect,
+  placeholder,
+  excludeUserIds = []
+}: {
+  selectedUser?: SessionPerson;
+  onSelect: (user: SessionPerson | undefined) => void;
+  placeholder: string;
+  excludeUserIds?: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const availableUsers = mockUsers.filter(user => 
+    !excludeUserIds.includes(user.id) && user.id !== selectedUser?.userId
+  );
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between"
+        >
+          {selectedUser ? (
+            <div className="flex items-center gap-2">
+              <Avatar className="h-5 w-5">
+                <AvatarImage src={selectedUser.photo} />
+                <AvatarFallback>{selectedUser.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <span>{selectedUser.name}</span>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">{placeholder}</span>
+          )}
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search users..." />
+          <CommandList>
+            <CommandEmpty>No users found.</CommandEmpty>
+            <CommandGroup>
+              {availableUsers.map((user) => {
+                const isSelected = selectedUser?.userId === user.id;
+                return (
+                  <CommandItem
+                    key={user.id}
+                    value={user.name}
+                    onSelect={() => {
+                      onSelect(isSelected ? undefined : userToSessionPerson(user));
+                      setOpen(false);
+                    }}
+                  >
+                    <div className="flex items-center gap-2 w-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.avatar} />
+                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="font-medium">{user.name}</div>
+                        {user.designation && (
+                          <div className="text-xs text-muted-foreground">{user.designation}</div>
+                        )}
+                      </div>
+                      {isSelected && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
+                    </div>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// User Multi-Select Component
+function UserMultiSelect({
+  selectedUsers,
+  onSelect,
+  placeholder,
+  excludeUserIds = []
+}: {
+  selectedUsers: SessionPerson[];
+  onSelect: (users: SessionPerson[]) => void;
+  placeholder: string;
+  excludeUserIds?: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedUserIds = selectedUsers.map(u => u.userId).filter(Boolean) as string[];
+  const availableUsers = mockUsers.filter(user => 
+    !excludeUserIds.includes(user.id) && !selectedUserIds.includes(user.id)
+  );
+
+  const toggleUser = (user: UserType) => {
+    const userPerson = userToSessionPerson(user);
+    const isSelected = selectedUsers.some(u => u.userId === user.id);
+    
+    if (isSelected) {
+      onSelect(selectedUsers.filter(u => u.userId !== user.id));
+    } else {
+      onSelect([...selectedUsers, userPerson]);
+    }
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between"
+        >
+          <span className="text-muted-foreground">
+            {selectedUsers.length > 0 
+              ? `${selectedUsers.length} selected` 
+              : placeholder}
+          </span>
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search users..." />
+          <CommandList>
+            <CommandEmpty>No users found.</CommandEmpty>
+            <CommandGroup>
+              {availableUsers.map((user) => {
+                const isSelected = selectedUsers.some(u => u.userId === user.id);
+                return (
+                  <CommandItem
+                    key={user.id}
+                    value={user.name}
+                    onSelect={() => toggleUser(user)}
+                  >
+                    <div className="flex items-center gap-2 w-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.avatar} />
+                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="font-medium">{user.name}</div>
+                        {user.designation && (
+                          <div className="text-xs text-muted-foreground">{user.designation}</div>
+                        )}
+                      </div>
+                      {isSelected && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
+                    </div>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function SessionPeopleManager({ 
+  sessionData, 
+  onUpdate 
+}: { 
+  sessionData: {
+    hosts?: SessionPerson[];
+    speakers?: SessionPerson[];
+    volunteers?: SessionPerson[];
+  };
+  onUpdate: (data: {
+    hosts?: SessionPerson[];
+    speakers?: SessionPerson[];
+    volunteers?: SessionPerson[];
+  }) => void;
+}) {
+  const removeHost = (userId: string) => {
+    const updated = (sessionData.hosts || []).filter(h => h.userId !== userId);
+    onUpdate({ ...sessionData, hosts: updated });
+  };
+
+  const removeSpeaker = (userId: string) => {
+    const updated = (sessionData.speakers || []).filter(s => s.userId !== userId);
+    onUpdate({ ...sessionData, speakers: updated });
+  };
+
+  const removeVolunteer = (userId: string) => {
+    const updated = (sessionData.volunteers || []).filter(v => v.userId !== userId);
+    onUpdate({ ...sessionData, volunteers: updated });
+  };
+
+  const excludeUserIds = [
+    ...(sessionData.hosts || []).map(h => h.userId),
+    ...(sessionData.speakers || []).map(s => s.userId),
+    ...(sessionData.volunteers || []).map(v => v.userId)
+  ].filter(Boolean) as string[];
+
+  return (
+    <div className="space-y-6">
+      {/* Hosts */}
+      <div>
+        <Label className="text-sm font-semibold mb-2 block">
+          Hosts ({sessionData.hosts?.length || 0})
+        </Label>
+        <div className="space-y-2">
+          {sessionData.hosts?.map((host) => (
+            <div key={host.userId} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={host.photo} />
+                <AvatarFallback>{host.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{host.name}</span>
+                  <Badge variant="outline" className="text-xs">Host</Badge>
+                </div>
+                {host.designation && (
+                  <p className="text-xs text-muted-foreground">{host.designation}</p>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => removeHost(host.userId!)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          <UserMultiSelect
+            selectedUsers={sessionData.hosts || []}
+            onSelect={(users) => onUpdate({ ...sessionData, hosts: users })}
+            placeholder="Select hosts..."
+            excludeUserIds={[
+              ...(sessionData.speakers || []).map(s => s.userId),
+              ...(sessionData.volunteers || []).map(v => v.userId)
+            ].filter(Boolean) as string[]}
+          />
+        </div>
+      </div>
+
+      {/* Speakers */}
+      <div>
+        <Label className="text-sm font-semibold mb-2 block">
+          Speakers ({sessionData.speakers?.length || 0}) *
+        </Label>
+        <div className="space-y-2">
+          {sessionData.speakers?.map((speaker) => (
+            <div key={speaker.userId} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={speaker.photo} />
+                <AvatarFallback>{speaker.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{speaker.name}</span>
+                  <Badge variant="default" className="text-xs">Speaker</Badge>
+                </div>
+                {speaker.designation && (
+                  <p className="text-xs text-muted-foreground">{speaker.designation}</p>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => removeSpeaker(speaker.userId!)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          <UserMultiSelect
+            selectedUsers={sessionData.speakers || []}
+            onSelect={(users) => onUpdate({ ...sessionData, speakers: users })}
+            placeholder="Select speakers..."
+            excludeUserIds={[
+              ...(sessionData.hosts || []).map(h => h.userId),
+              ...(sessionData.volunteers || []).map(v => v.userId)
+            ].filter(Boolean) as string[]}
+          />
+        </div>
+      </div>
+
+      {/* Volunteers */}
+      <div>
+        <Label className="text-sm font-semibold mb-2 block">
+          Volunteers ({sessionData.volunteers?.length || 0})
+        </Label>
+        <div className="space-y-2">
+          {sessionData.volunteers?.map((volunteer) => (
+            <div key={volunteer.userId} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={volunteer.photo} />
+                <AvatarFallback>{volunteer.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{volunteer.name}</span>
+                  <Badge variant="secondary" className="text-xs">Volunteer</Badge>
+                </div>
+                {volunteer.designation && (
+                  <p className="text-xs text-muted-foreground">{volunteer.designation}</p>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => removeVolunteer(volunteer.userId!)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          <UserMultiSelect
+            selectedUsers={sessionData.volunteers || []}
+            onSelect={(users) => onUpdate({ ...sessionData, volunteers: users })}
+            placeholder="Select volunteers..."
+            excludeUserIds={[sessionData.host?.userId, sessionData.speaker?.userId].filter(Boolean) as string[]}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AddSessionDialog({ sprint }: { sprint: Sprint }) {
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    date: '',
+    time: '',
+    duration: '90',
+    description: '',
+    meetingLink: '',
+    posterImage: ''
+  });
+  const [peopleData, setPeopleData] = useState<{
+    hosts?: SessionPerson[];
+    speakers?: SessionPerson[];
+    volunteers?: SessionPerson[];
+  }>({
+    hosts: [],
+    speakers: [],
+    volunteers: []
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!peopleData.speakers || peopleData.speakers.length === 0) {
+      toast.error('Please add at least one speaker for this session');
+      return;
+    }
+
+    // Use the first speaker for backward compatibility with existing Session interface
+    const primarySpeaker = peopleData.speakers[0];
+
+    // Create session object
+    const newSession: Session = {
+      id: `ses-${Date.now()}`,
+      title: formData.title,
+      speaker: primarySpeaker.name,
+      speakerId: primarySpeaker.userId,
+      speakerPhoto: primarySpeaker.photo,
+      speakerDesignation: primarySpeaker.designation,
+      speakerCompany: primarySpeaker.company,
+      speakerLinkedIn: primarySpeaker.linkedIn,
+      hosts: peopleData.hosts,
+      speakers: peopleData.speakers,
+      volunteers: peopleData.volunteers,
+      date: formData.date,
+      time: formData.time,
+      duration: `${formData.duration} minutes`,
+      description: formData.description,
+      meetingLink: formData.meetingLink || undefined,
+      posterImage: formData.posterImage || undefined
+    };
+
+    // In a real app, this would be an API call
+    console.log('Adding session to sprint:', sprint.id, newSession);
+    toast.success('Session added successfully!');
+    
+    // Reset form
+    setFormData({
+      title: '',
+      date: '',
+      time: '',
+      duration: '90',
+      description: '',
+      meetingLink: '',
+      posterImage: ''
+    });
+    setPeopleData({ hosts: [], speakers: [], volunteers: [] });
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-1">
+          <Video className="h-4 w-4" />
+          Add Session
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add Session to {sprint.title}</DialogTitle>
+          <DialogDescription>
+            Create a new session for this sprint. Add session details, poster, and assign people to roles.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Session Info */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-lg">Session Details</h3>
+            <div className="space-y-2">
+              <Label>Session Title *</Label>
+              <Input
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="e.g., Introduction to Serverless Architecture"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date *</Label>
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Time *</Label>
+                <Input
+                  type="time"
+                  value={formData.time}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Duration (minutes)</Label>
+                <Input
+                  type="number"
+                  value={formData.duration}
+                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                  placeholder="90"
+                  min="15"
+                  max="300"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Meeting Link</Label>
+                <Input
+                  value={formData.meetingLink}
+                  onChange={(e) => setFormData({ ...formData, meetingLink: e.target.value })}
+                  placeholder="https://meet.example.com/..."
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Session Description *</Label>
+              <Textarea
+                rows={4}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Describe what participants will learn in this session..."
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Poster Image URL</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={formData.posterImage}
+                  onChange={(e) => setFormData({ ...formData, posterImage: e.target.value })}
+                  placeholder="https://example.com/poster.jpg"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    // In a real app, this would open a file upload dialog
+                    toast.info('File upload feature will be implemented with backend');
+                  }}
+                >
+                  <Upload className="h-4 w-4" />
+                </Button>
+              </div>
+              {formData.posterImage && (
+                <div className="mt-2">
+                  <img
+                    src={formData.posterImage}
+                    alt="Poster preview"
+                    className="w-full h-32 object-cover rounded-lg border"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* People Management */}
+          <div className="space-y-4 border-t pt-6">
+            <h3 className="font-semibold text-lg">Session People</h3>
+            <SessionPeopleManager
+              sessionData={peopleData}
+              onUpdate={setPeopleData}
+            />
+          </div>
+
+          <div className="flex gap-2 pt-4 border-t">
+            <Button type="submit" className="flex-1">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Session
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
@@ -629,6 +1189,7 @@ export default function Admin() {
                               </div>
                             </div>
                             <div className="flex flex-wrap gap-2">
+                              <AddSessionDialog sprint={sprint} />
                               <SpeakerInviteDialog 
                                 eventType="sprint" 
                                 eventId={sprint.id} 
