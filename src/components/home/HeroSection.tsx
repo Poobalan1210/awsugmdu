@@ -73,7 +73,8 @@ export function HeroSection() {
             className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6"
           >
             Welcome to{' '}
-            <span className="gradient-text">AWS User Group</span>
+            <br></br>
+            <span className="gradient-text">AWS User Group Madurai</span>
           </motion.h1>
 
           <motion.p
