@@ -1132,6 +1132,288 @@ export const mockCertificationGroups: CertificationGroup[] = [
   }
 ];
 
+// ==================== COLLEGE CHAMPS DATA ====================
+
+export interface CollegeTask {
+  id: string;
+  title: string;
+  description: string;
+  points: number;
+  category: 'onboarding' | 'learning' | 'community' | 'event' | 'special';
+  isPredefined: boolean;
+  order?: number;
+}
+
+export interface CollegeTaskCompletion {
+  taskId: string;
+  completedAt: string;
+  verifiedBy?: string;
+  proof?: string;
+  bonusPoints?: number;
+}
+
+export interface CollegeEvent {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  type: 'workshop' | 'hackathon' | 'meetup' | 'webinar';
+  attendees: number;
+  pointsAwarded: number;
+  status: 'upcoming' | 'completed';
+}
+
+export interface College {
+  id: string;
+  name: string;
+  shortName: string;
+  logo?: string;
+  location: string;
+  champsLead: string;
+  champsLeadId?: string;
+  totalPoints: number;
+  rank: number;
+  joinedDate: string;
+  completedTasks: CollegeTaskCompletion[];
+  hostedEvents: CollegeEvent[];
+  members: string[];
+  color: string;
+}
+
+export const predefinedTasks: CollegeTask[] = [
+  { id: 'task1', title: 'Register as College Champ', description: 'Complete registration and verify your college email', points: 50, category: 'onboarding', isPredefined: true, order: 1 },
+  { id: 'task2', title: 'Form Core Team', description: 'Recruit at least 3 team members for your college chapter', points: 100, category: 'onboarding', isPredefined: true, order: 2 },
+  { id: 'task3', title: 'Complete AWS Basics Module', description: 'All core team members complete AWS Cloud Practitioner essentials', points: 150, category: 'learning', isPredefined: true, order: 3 },
+  { id: 'task4', title: 'Social Media Setup', description: 'Create official college chapter social media handles', points: 75, category: 'community', isPredefined: true, order: 4 },
+  { id: 'task5', title: 'Host Intro Session', description: 'Conduct an introductory session about AWS for your college', points: 200, category: 'event', isPredefined: true, order: 5 },
+  { id: 'task6', title: 'Get 25 Members', description: 'Grow your chapter to 25+ active members', points: 150, category: 'community', isPredefined: true, order: 6 },
+  { id: 'task7', title: 'First Workshop', description: 'Host a hands-on workshop on any AWS service', points: 250, category: 'event', isPredefined: true, order: 7 },
+  { id: 'task8', title: 'Certification Drive', description: 'Help at least 5 members get AWS certified', points: 300, category: 'learning', isPredefined: true, order: 8 },
+  { id: 'task9', title: 'Cross-College Collaboration', description: 'Collaborate with another college chapter for an event', points: 200, category: 'special', isPredefined: true, order: 9 },
+  { id: 'task10', title: 'Industry Connect', description: 'Invite an industry professional for a guest session', points: 250, category: 'special', isPredefined: true, order: 10 },
+];
+
+export const mockColleges: College[] = [
+  {
+    id: 'college1',
+    name: 'Indian Institute of Technology Delhi',
+    shortName: 'IIT Delhi',
+    location: 'New Delhi',
+    champsLead: 'Rohit Verma',
+    champsLeadId: '5',
+    totalPoints: 1425,
+    rank: 1,
+    joinedDate: '2024-08-15',
+    color: 'from-blue-500 to-cyan-500',
+    completedTasks: [
+      { taskId: 'task1', completedAt: '2024-08-16' },
+      { taskId: 'task2', completedAt: '2024-08-20' },
+      { taskId: 'task3', completedAt: '2024-09-05' },
+      { taskId: 'task4', completedAt: '2024-09-10' },
+      { taskId: 'task5', completedAt: '2024-09-25', bonusPoints: 50 },
+      { taskId: 'task6', completedAt: '2024-10-10' },
+      { taskId: 'task7', completedAt: '2024-10-28', bonusPoints: 100 },
+      { taskId: 'task8', completedAt: '2024-11-15' },
+    ],
+    hostedEvents: [
+      { id: 'e1', title: 'AWS Fundamentals Bootcamp', description: 'Introduction to core AWS services', date: '2024-09-25', type: 'workshop', attendees: 120, pointsAwarded: 200, status: 'completed' },
+      { id: 'e2', title: 'Serverless Architecture Deep Dive', description: 'Building with Lambda and API Gateway', date: '2024-10-28', type: 'workshop', attendees: 85, pointsAwarded: 250, status: 'completed' },
+      { id: 'e3', title: 'Cloud Hackathon 2025', description: 'Build innovative solutions on AWS', date: '2025-02-15', type: 'hackathon', attendees: 0, pointsAwarded: 0, status: 'upcoming' },
+    ],
+    members: ['5', '6', '7', '8'],
+  },
+  {
+    id: 'college2',
+    name: 'Birla Institute of Technology and Science',
+    shortName: 'BITS Pilani',
+    location: 'Pilani, Rajasthan',
+    champsLead: 'Sneha Gupta',
+    champsLeadId: '7',
+    totalPoints: 1275,
+    rank: 2,
+    joinedDate: '2024-08-20',
+    color: 'from-purple-500 to-pink-500',
+    completedTasks: [
+      { taskId: 'task1', completedAt: '2024-08-21' },
+      { taskId: 'task2', completedAt: '2024-08-28' },
+      { taskId: 'task3', completedAt: '2024-09-15' },
+      { taskId: 'task4', completedAt: '2024-09-18' },
+      { taskId: 'task5', completedAt: '2024-10-05' },
+      { taskId: 'task6', completedAt: '2024-10-20' },
+      { taskId: 'task7', completedAt: '2024-11-08' },
+    ],
+    hostedEvents: [
+      { id: 'e4', title: 'Cloud Computing 101', description: 'Getting started with AWS', date: '2024-10-05', type: 'workshop', attendees: 95, pointsAwarded: 200, status: 'completed' },
+      { id: 'e5', title: 'DevOps on AWS', description: 'CI/CD pipelines with CodePipeline', date: '2024-11-08', type: 'workshop', attendees: 70, pointsAwarded: 250, status: 'completed' },
+    ],
+    members: ['7', '9', '10'],
+  },
+  {
+    id: 'college3',
+    name: 'Vellore Institute of Technology',
+    shortName: 'VIT Vellore',
+    location: 'Vellore, Tamil Nadu',
+    champsLead: 'Karthik Raja',
+    totalPoints: 1150,
+    rank: 3,
+    joinedDate: '2024-08-25',
+    color: 'from-amber-500 to-orange-500',
+    completedTasks: [
+      { taskId: 'task1', completedAt: '2024-08-26' },
+      { taskId: 'task2', completedAt: '2024-09-02' },
+      { taskId: 'task3', completedAt: '2024-09-20' },
+      { taskId: 'task4', completedAt: '2024-09-25' },
+      { taskId: 'task5', completedAt: '2024-10-12' },
+      { taskId: 'task6', completedAt: '2024-11-01' },
+      { taskId: 'task7', completedAt: '2024-11-20' },
+    ],
+    hostedEvents: [
+      { id: 'e6', title: 'AWS for Startups', description: 'Building scalable applications', date: '2024-10-12', type: 'webinar', attendees: 150, pointsAwarded: 200, status: 'completed' },
+    ],
+    members: ['11', '12', '13', '14'],
+  },
+  {
+    id: 'college4',
+    name: 'National Institute of Technology Karnataka',
+    shortName: 'NITK Surathkal',
+    location: 'Mangalore, Karnataka',
+    champsLead: 'Arun Kumar',
+    totalPoints: 925,
+    rank: 4,
+    joinedDate: '2024-09-01',
+    color: 'from-green-500 to-emerald-500',
+    completedTasks: [
+      { taskId: 'task1', completedAt: '2024-09-02' },
+      { taskId: 'task2', completedAt: '2024-09-10' },
+      { taskId: 'task3', completedAt: '2024-09-28' },
+      { taskId: 'task4', completedAt: '2024-10-05' },
+      { taskId: 'task5', completedAt: '2024-10-22' },
+      { taskId: 'task6', completedAt: '2024-11-10' },
+    ],
+    hostedEvents: [
+      { id: 'e7', title: 'Intro to AWS', description: 'First college event', date: '2024-10-22', type: 'meetup', attendees: 80, pointsAwarded: 200, status: 'completed' },
+    ],
+    members: ['15', '16'],
+  },
+  {
+    id: 'college5',
+    name: 'Delhi Technological University',
+    shortName: 'DTU',
+    location: 'New Delhi',
+    champsLead: 'Priyanka Singh',
+    totalPoints: 825,
+    rank: 5,
+    joinedDate: '2024-09-05',
+    color: 'from-red-500 to-rose-500',
+    completedTasks: [
+      { taskId: 'task1', completedAt: '2024-09-06' },
+      { taskId: 'task2', completedAt: '2024-09-15' },
+      { taskId: 'task3', completedAt: '2024-10-01' },
+      { taskId: 'task4', completedAt: '2024-10-08' },
+      { taskId: 'task5', completedAt: '2024-10-30' },
+    ],
+    hostedEvents: [
+      { id: 'e8', title: 'Cloud Careers Workshop', description: 'Career paths in cloud computing', date: '2024-10-30', type: 'workshop', attendees: 110, pointsAwarded: 200, status: 'completed' },
+    ],
+    members: ['17', '18', '19'],
+  },
+  {
+    id: 'college6',
+    name: 'Indian Institute of Technology Bombay',
+    shortName: 'IIT Bombay',
+    location: 'Mumbai, Maharashtra',
+    champsLead: 'Vikram Mehta',
+    totalPoints: 675,
+    rank: 6,
+    joinedDate: '2024-09-10',
+    color: 'from-indigo-500 to-violet-500',
+    completedTasks: [
+      { taskId: 'task1', completedAt: '2024-09-11' },
+      { taskId: 'task2', completedAt: '2024-09-22' },
+      { taskId: 'task3', completedAt: '2024-10-10' },
+      { taskId: 'task4', completedAt: '2024-10-18' },
+      { taskId: 'task5', completedAt: '2024-11-05' },
+    ],
+    hostedEvents: [],
+    members: ['20', '21'],
+  },
+  {
+    id: 'college7',
+    name: 'Manipal Institute of Technology',
+    shortName: 'MIT Manipal',
+    location: 'Manipal, Karnataka',
+    champsLead: 'Divya Nair',
+    totalPoints: 525,
+    rank: 7,
+    joinedDate: '2024-09-15',
+    color: 'from-teal-500 to-cyan-500',
+    completedTasks: [
+      { taskId: 'task1', completedAt: '2024-09-16' },
+      { taskId: 'task2', completedAt: '2024-09-28' },
+      { taskId: 'task3', completedAt: '2024-10-15' },
+      { taskId: 'task4', completedAt: '2024-10-25' },
+    ],
+    hostedEvents: [],
+    members: ['22', '23', '24'],
+  },
+  {
+    id: 'college8',
+    name: 'SRM Institute of Science and Technology',
+    shortName: 'SRMIST',
+    location: 'Chennai, Tamil Nadu',
+    champsLead: 'Rajesh Kumar',
+    totalPoints: 375,
+    rank: 8,
+    joinedDate: '2024-09-20',
+    color: 'from-pink-500 to-fuchsia-500',
+    completedTasks: [
+      { taskId: 'task1', completedAt: '2024-09-21' },
+      { taskId: 'task2', completedAt: '2024-10-05' },
+      { taskId: 'task3', completedAt: '2024-10-25' },
+    ],
+    hostedEvents: [],
+    members: ['25'],
+  },
+  {
+    id: 'college9',
+    name: 'PSG College of Technology',
+    shortName: 'PSG Tech',
+    location: 'Coimbatore, Tamil Nadu',
+    champsLead: 'Meera Sundaram',
+    totalPoints: 225,
+    rank: 9,
+    joinedDate: '2024-10-01',
+    color: 'from-sky-500 to-blue-500',
+    completedTasks: [
+      { taskId: 'task1', completedAt: '2024-10-02' },
+      { taskId: 'task2', completedAt: '2024-10-18' },
+    ],
+    hostedEvents: [],
+    members: ['26', '27'],
+  },
+  {
+    id: 'college10',
+    name: 'Amity University',
+    shortName: 'Amity',
+    location: 'Noida, Uttar Pradesh',
+    champsLead: 'Amit Sharma',
+    totalPoints: 100,
+    rank: 10,
+    joinedDate: '2024-10-15',
+    color: 'from-slate-500 to-gray-500',
+    completedTasks: [
+      { taskId: 'task1', completedAt: '2024-10-16' },
+    ],
+    hostedEvents: [],
+    members: ['28'],
+  },
+];
+
+// Helper to get task by ID
+export const getTaskById = (taskId: string): CollegeTask | undefined => {
+  return predefinedTasks.find(task => task.id === taskId);
+};
+
 // Current logged in user (for demo - can be switched between roles)
 export const adminUser: User = mockUsers[0]; // Admin
 export const speakerUser: User = mockUsers[1]; // Speaker (Priya)
