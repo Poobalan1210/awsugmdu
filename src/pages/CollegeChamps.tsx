@@ -14,7 +14,7 @@ import {
   ChevronRight, Clock, ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { mockColleges, predefinedTasks, getTaskById, College, CollegeTask } from '@/data/mockData';
+import { mockColleges, predefinedTasks, getTaskById, getUserById, College, CollegeTask } from '@/data/mockData';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -132,9 +132,11 @@ function CollegeLeaderboard({ colleges, onSelectCollege }: { colleges: College[]
 }
 
 function CollegeDetailView({ college, onClose }: { college: College, onClose: () => void }) {
-  const completedTaskIds = college.completedTasks.map(t => t.taskId);
-  const nextTask = predefinedTasks.find(t => !completedTaskIds.includes(t.id));
   const progressPercentage = (college.completedTasks.length / predefinedTasks.length) * 100;
+
+  // Get member details
+  const memberDetails = college.members.map(memberId => getUserById(memberId)).filter(Boolean);
+  const champsLead = college.champsLeadId ? getUserById(college.champsLeadId) : null;
 
   return (
     <motion.div
@@ -191,6 +193,9 @@ function CollegeDetailView({ college, onClose }: { college: College, onClose: ()
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-12 w-12">
+              {champsLead?.avatar ? (
+                <AvatarImage src={champsLead.avatar} alt={college.champsLead} />
+              ) : null}
               <AvatarFallback className={`bg-gradient-to-br ${college.color} text-white`}>
                 {college.champsLead.split(' ').map(n => n[0]).join('')}
               </AvatarFallback>
@@ -198,6 +203,9 @@ function CollegeDetailView({ college, onClose }: { college: College, onClose: ()
             <div>
               <p className="text-sm text-muted-foreground">Champs Lead</p>
               <p className="font-semibold">{college.champsLead}</p>
+              {champsLead?.designation && (
+                <p className="text-xs text-muted-foreground">{champsLead.designation}</p>
+              )}
             </div>
             <Badge variant="secondary" className="ml-auto">
               <Award className="h-3 w-3 mr-1" />
@@ -207,72 +215,52 @@ function CollegeDetailView({ college, onClose }: { college: College, onClose: ()
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="tasks" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
+      <Tabs defaultValue="completed" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="completed">Completed ({college.completedTasks.length})</TabsTrigger>
           <TabsTrigger value="events">Events ({college.hostedEvents.length})</TabsTrigger>
+          <TabsTrigger value="members">Members ({college.members.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="tasks" className="space-y-4">
-          {/* Next Task Highlight */}
-          {nextTask && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-            >
-              <Card className="border-2 border-primary/50 bg-primary/5">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2">
-                    <Target className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">Next Task</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">{nextTask.title}</h4>
-                      <p className="text-sm text-muted-foreground">{nextTask.description}</p>
-                    </div>
-                    <Badge className="bg-primary">+{nextTask.points} pts</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-
-          {/* All Tasks */}
-          <div className="space-y-2">
-            {predefinedTasks.map((task) => {
-              const completion = college.completedTasks.find(c => c.taskId === task.id);
-              const isCompleted = !!completion;
-              
-              return (
-                <motion.div
-                  key={task.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className={`p-4 rounded-lg border ${isCompleted ? 'bg-green-500/5 border-green-500/30' : 'bg-muted/30 border-border'}`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`mt-0.5 ${isCompleted ? 'text-green-500' : 'text-muted-foreground'}`}>
-                      {isCompleted ? (
+        <TabsContent value="completed" className="space-y-4">
+          {college.completedTasks.length === 0 ? (
+            <Card className="glass-card">
+              <CardContent className="p-8 text-center">
+                <CheckCircle2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-semibold mb-2">No Completed Tasks Yet</h3>
+                <p className="text-sm text-muted-foreground">
+                  This college is just getting started. Tasks will appear here once completed.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {college.completedTasks.map((completion) => {
+                const task = getTaskById(completion.taskId);
+                if (!task) return null;
+                
+                return (
+                  <motion.div
+                    key={completion.taskId}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="p-4 rounded-lg border bg-green-500/5 border-green-500/30"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 text-green-500">
                         <CheckCircle2 className="h-5 w-5" />
-                      ) : (
-                        <Circle className="h-5 w-5" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`font-medium ${isCompleted ? 'text-green-700 dark:text-green-400' : ''}`}>
-                          {task.title}
-                        </span>
-                        <Badge variant="outline" className={getCategoryColor(task.category)}>
-                          {getCategoryIcon(task.category)}
-                          <span className="ml-1 capitalize">{task.category}</span>
-                        </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">{task.description}</p>
-                      {completion && (
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-green-700 dark:text-green-400">
+                            {task.title}
+                          </span>
+                          <Badge variant="outline" className={getCategoryColor(task.category)}>
+                            {getCategoryIcon(task.category)}
+                            <span className="ml-1 capitalize">{task.category}</span>
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{task.description}</p>
                         <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           Completed on {new Date(completion.completedAt).toLocaleDateString()}
@@ -282,16 +270,16 @@ function CollegeDetailView({ college, onClose }: { college: College, onClose: ()
                             </Badge>
                           )}
                         </p>
-                      )}
+                      </div>
+                      <Badge className="bg-green-500">
+                        {task.points} pts
+                      </Badge>
                     </div>
-                    <Badge variant={isCompleted ? "default" : "secondary"} className={isCompleted ? 'bg-green-500' : ''}>
-                      {task.points} pts
-                    </Badge>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="events" className="space-y-4">
@@ -301,7 +289,7 @@ function CollegeDetailView({ college, onClose }: { college: College, onClose: ()
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="font-semibold mb-2">No Events Yet</h3>
                 <p className="text-sm text-muted-foreground">
-                  This college hasn't hosted any events yet. Complete more tasks to unlock event hosting!
+                  This college hasn't hosted any events yet. Events will appear here once hosted.
                 </p>
               </CardContent>
             </Card>
@@ -348,6 +336,72 @@ function CollegeDetailView({ college, onClose }: { college: College, onClose: ()
                   </Card>
                 </motion.div>
               ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="members" className="space-y-4">
+          {memberDetails.length === 0 ? (
+            <Card className="glass-card">
+              <CardContent className="p-8 text-center">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-semibold mb-2">No Members Yet</h3>
+                <p className="text-sm text-muted-foreground">
+                  Members will appear here once they join the college chapter.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {memberDetails.map((member) => {
+                if (!member) return null;
+                const isLead = member.id === college.champsLeadId;
+                
+                return (
+                  <motion.div
+                    key={member.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <Card className={`glass-card hover:shadow-md transition-shadow ${isLead ? 'border-2 border-amber-500/50' : ''}`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={member.avatar} alt={member.name} />
+                            <AvatarFallback className={`bg-gradient-to-br ${college.color} text-white`}>
+                              {member.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold">{member.name}</h4>
+                              {isLead && (
+                                <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
+                                  <Award className="h-3 w-3 mr-1" />
+                                  Lead
+                                </Badge>
+                              )}
+                            </div>
+                            {member.designation && (
+                              <p className="text-sm text-muted-foreground">{member.designation}</p>
+                            )}
+                            {member.company && (
+                              <p className="text-xs text-muted-foreground">{member.company}</p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <div className="flex items-center gap-1 text-sm font-medium">
+                              <Zap className="h-4 w-4 text-amber-500" />
+                              {member.points}
+                            </div>
+                            <p className="text-xs text-muted-foreground">points</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
             </div>
           )}
         </TabsContent>
@@ -470,45 +524,37 @@ export default function CollegeChamps() {
                   </motion.div>
                 ) : (
                   <motion.div
-                    key="tasks-overview"
+                    key="welcome-message"
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                   >
                     <Card className="glass-card sticky top-24">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Target className="h-5 w-5 text-primary" />
-                          Predefined Tasks
-                        </CardTitle>
-                        <CardDescription>
-                          Complete these tasks to earn points and unlock event hosting
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {predefinedTasks.map((task, index) => (
-                          <motion.div
-                            key={task.id}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                          >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getCategoryColor(task.category)}`}>
-                              {getCategoryIcon(task.category)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">{task.title}</p>
-                              <p className="text-xs text-muted-foreground capitalize">{task.category}</p>
-                            </div>
-                            <Badge variant="secondary">{task.points}</Badge>
-                          </motion.div>
-                        ))}
-                        
-                        <div className="pt-4 border-t">
-                          <p className="text-sm text-muted-foreground text-center">
-                            Click on a college to view their progress
-                          </p>
+                      <CardContent className="p-8 text-center">
+                        <motion.div
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ delay: 0.2 }}
+                        >
+                          <GraduationCap className="h-16 w-16 text-primary mx-auto mb-4" />
+                        </motion.div>
+                        <h3 className="text-lg font-semibold mb-2">Select a College</h3>
+                        <p className="text-sm text-muted-foreground mb-6">
+                          Click on any college from the leaderboard to view their completed tasks, hosted events, and team members.
+                        </p>
+                        <div className="space-y-3 text-left">
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                            <span className="text-sm">View completed tasks & points earned</span>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <Calendar className="h-5 w-5 text-blue-500" />
+                            <span className="text-sm">See hosted events & workshops</span>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <Users className="h-5 w-5 text-purple-500" />
+                            <span className="text-sm">Meet the team members</span>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
