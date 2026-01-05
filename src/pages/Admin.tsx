@@ -651,7 +651,10 @@ function SessionPeopleManager({
             selectedUsers={sessionData.volunteers || []}
             onSelect={(users) => onUpdate({ ...sessionData, volunteers: users })}
             placeholder="Select volunteers..."
-            excludeUserIds={[sessionData.host?.userId, sessionData.speaker?.userId].filter(Boolean) as string[]}
+            excludeUserIds={[
+              ...(sessionData.hosts || []).map(h => h.userId),
+              ...(sessionData.speakers || []).map(s => s.userId)
+            ].filter(Boolean) as string[]}
           />
         </div>
       </div>
