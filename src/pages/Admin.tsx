@@ -16,9 +16,11 @@ import {
   Plus, Calendar, Users, CheckCircle, XCircle, Clock,
   Rocket, ExternalLink, MessageSquare, Award, Link2,
   Copy, Mail, Edit, Trash2, Eye, FileText, User, Video,
-  Upload, X, UserPlus, Check, ChevronDown
+  Upload, X, UserPlus, Check, ChevronDown, GraduationCap,
+  Trophy, ListTodo, ClipboardCheck, Target
 } from 'lucide-react';
-import { mockSprints, mockMeetups, currentUser, Submission, generateSpeakerInviteLink, Sprint, Session, SessionPerson, mockUsers, User as UserType } from '@/data/mockData';
+import { mockSprints, mockMeetups, currentUser, Submission, generateSpeakerInviteLink, Sprint, Session, SessionPerson, mockUsers, User as UserType, predefinedTasks, mockColleges, CollegeTask, College, getTaskById, getUserById } from '@/data/mockData';
+import { Progress } from '@/components/ui/progress';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { format, parseISO } from 'date-fns';
@@ -998,6 +1000,626 @@ function CreateMeetupDialog() {
   );
 }
 
+// ================== COLLEGE CHAMPS MANAGEMENT ==================
+
+// Create/Edit Task Dialog
+function CreateTaskDialog({ task, onClose }: { task?: CollegeTask; onClose?: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    title: task?.title || '',
+    description: task?.description || '',
+    points: task?.points || 100,
+    category: task?.category || 'learning' as CollegeTask['category'],
+    order: task?.order || predefinedTasks.length + 1
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast.success(task ? 'Task updated successfully!' : 'Task created successfully!');
+    setOpen(false);
+    onClose?.();
+  };
+
+  const categoryOptions: { value: CollegeTask['category']; label: string; color: string }[] = [
+    { value: 'onboarding', label: 'Onboarding', color: 'bg-blue-500' },
+    { value: 'learning', label: 'Learning', color: 'bg-green-500' },
+    { value: 'community', label: 'Community', color: 'bg-purple-500' },
+    { value: 'event', label: 'Event', color: 'bg-amber-500' },
+    { value: 'special', label: 'Special', color: 'bg-pink-500' }
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {task ? (
+          <Button variant="ghost" size="sm" className="gap-1">
+            <Edit className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button className="gap-2">
+            <Plus className="h-4 w-4" />
+            Create Task
+          </Button>
+        )}
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{task ? 'Edit Task' : 'Create New Task'}</DialogTitle>
+          <DialogDescription>
+            {task ? 'Update the task details.' : 'Create a new predefined task for colleges to complete.'}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Task Title</Label>
+            <Input
+              placeholder="e.g., Host First Workshop"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Description</Label>
+            <Textarea
+              rows={3}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Describe what needs to be done to complete this task..."
+              required
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Points</Label>
+              <Input
+                type="number"
+                value={formData.points}
+                onChange={(e) => setFormData({ ...formData, points: Number(e.target.value) })}
+                min={10}
+                max={1000}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Order</Label>
+              <Input
+                type="number"
+                value={formData.order}
+                onChange={(e) => setFormData({ ...formData, order: Number(e.target.value) })}
+                min={1}
+                required
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <Select
+              value={formData.category}
+              onValueChange={(value: CollegeTask['category']) =>
+                setFormData({ ...formData, category: value })
+              }
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {categoryOptions.map(cat => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${cat.color}`} />
+                      {cat.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button type="submit" className="w-full">
+            {task ? 'Update Task' : 'Create Task'}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Verify Task Completion Dialog
+function VerifyTaskDialog({ college, taskId }: { college: College; taskId: string }) {
+  const [open, setOpen] = useState(false);
+  const [bonusPoints, setBonusPoints] = useState(0);
+  const [feedback, setFeedback] = useState('');
+  const task = getTaskById(taskId);
+  const completion = college.completedTasks.find(t => t.taskId === taskId);
+
+  if (!task) return null;
+
+  const handleVerify = () => {
+    toast.success(`Task verified for ${college.name}! ${task.points + bonusPoints} points awarded.`);
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="gap-1">
+          <ClipboardCheck className="h-4 w-4" />
+          Verify
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Verify Task Completion</DialogTitle>
+          <DialogDescription>
+            Verify "{task.title}" completion for {college.name}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-medium">{task.title}</span>
+              <Badge>{task.points} pts</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">{task.description}</p>
+          </div>
+          
+          {completion?.proof && (
+            <div className="space-y-2">
+              <Label>Submitted Proof</Label>
+              <a 
+                href={completion.proof} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline flex items-center gap-1 text-sm"
+              >
+                <ExternalLink className="h-3 w-3" />
+                View Proof
+              </a>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label>Bonus Points (Optional)</Label>
+            <Input
+              type="number"
+              value={bonusPoints}
+              onChange={(e) => setBonusPoints(Number(e.target.value))}
+              min={0}
+              max={500}
+              placeholder="0"
+            />
+            <p className="text-xs text-muted-foreground">
+              Total: {task.points + bonusPoints} points
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Feedback (Optional)</Label>
+            <Textarea
+              rows={2}
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              placeholder="Add feedback for the college..."
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <Button onClick={handleVerify} className="flex-1 gap-1">
+              <CheckCircle className="h-4 w-4" />
+              Verify & Award Points
+            </Button>
+            <Button variant="destructive" className="gap-1">
+              <XCircle className="h-4 w-4" />
+              Reject
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Award Adhoc Points Dialog
+function AwardPointsDialog({ college }: { college: College }) {
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    reason: '',
+    points: 50,
+    category: 'special' as CollegeTask['category']
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast.success(`${formData.points} points awarded to ${college.name}!`);
+    setOpen(false);
+    setFormData({ reason: '', points: 50, category: 'special' });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="gap-1">
+          <Award className="h-4 w-4" />
+          Award Points
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Award Adhoc Points</DialogTitle>
+          <DialogDescription>
+            Award additional points to {college.name} for special achievements
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Reason</Label>
+            <Input
+              placeholder="e.g., Outstanding participation in community event"
+              value={formData.reason}
+              onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+              required
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Points</Label>
+              <Input
+                type="number"
+                value={formData.points}
+                onChange={(e) => setFormData({ ...formData, points: Number(e.target.value) })}
+                min={10}
+                max={500}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select
+                value={formData.category}
+                onValueChange={(value: CollegeTask['category']) =>
+                  setFormData({ ...formData, category: value })
+                }
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="special">Special</SelectItem>
+                  <SelectItem value="event">Event</SelectItem>
+                  <SelectItem value="community">Community</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <Button type="submit" className="w-full gap-1">
+            <Award className="h-4 w-4" />
+            Award {formData.points} Points
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// College Management Card
+function CollegeManagementCard({ college }: { college: College }) {
+  const [expanded, setExpanded] = useState(false);
+  const completedTaskIds = college.completedTasks.map(t => t.taskId);
+  const pendingTasks = predefinedTasks.filter(t => !completedTaskIds.includes(t.id));
+  const completedTasks = predefinedTasks.filter(t => completedTaskIds.includes(t.id));
+  const progressPercent = (completedTasks.length / predefinedTasks.length) * 100;
+  
+  const lead = college.champsLeadId ? getUserById(college.champsLeadId) : null;
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'onboarding': return 'bg-blue-500/10 text-blue-600 border-blue-500/30';
+      case 'learning': return 'bg-green-500/10 text-green-600 border-green-500/30';
+      case 'community': return 'bg-purple-500/10 text-purple-600 border-purple-500/30';
+      case 'event': return 'bg-amber-500/10 text-amber-600 border-amber-500/30';
+      case 'special': return 'bg-pink-500/10 text-pink-600 border-pink-500/30';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card className="glass-card overflow-hidden">
+        <CardContent className="p-4">
+          {/* Header */}
+          <div className="flex items-center gap-4 mb-4">
+            <div 
+              className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg"
+              style={{ backgroundColor: college.color }}
+            >
+              #{college.rank}
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-semibold">{college.name}</h3>
+                <Badge variant="outline" className="text-xs">{college.shortName}</Badge>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Trophy className="h-3 w-3" />
+                  {college.totalPoints} pts
+                </span>
+                <span className="flex items-center gap-1">
+                  <Target className="h-3 w-3" />
+                  {completedTasks.length}/{predefinedTasks.length} tasks
+                </span>
+                <span className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  {college.members.length} members
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <AwardPointsDialog college={college} />
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setExpanded(!expanded)}
+              >
+                <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+              </Button>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+              <span>Task Progress</span>
+              <span>{Math.round(progressPercent)}%</span>
+            </div>
+            <Progress value={progressPercent} className="h-2" />
+          </div>
+
+          {/* Lead Info */}
+          {lead && (
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 mb-4">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={lead.avatar} />
+                <AvatarFallback>{lead.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-sm font-medium">{lead.name}</p>
+                <p className="text-xs text-muted-foreground">Champs Lead</p>
+              </div>
+            </div>
+          )}
+
+          {/* Expanded Content */}
+          {expanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="border-t pt-4 mt-4 space-y-4"
+            >
+              {/* Pending Tasks */}
+              {pendingTasks.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <ListTodo className="h-4 w-4 text-amber-500" />
+                    Pending Tasks ({pendingTasks.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {pendingTasks.slice(0, 3).map(task => (
+                      <div key={task.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-sm font-medium">
+                            {task.order}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">{task.title}</p>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className={`text-xs ${getCategoryColor(task.category)}`}>
+                                {task.category}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">{task.points} pts</span>
+                            </div>
+                          </div>
+                        </div>
+                        <VerifyTaskDialog college={college} taskId={task.id} />
+                      </div>
+                    ))}
+                    {pendingTasks.length > 3 && (
+                      <p className="text-xs text-muted-foreground text-center py-2">
+                        +{pendingTasks.length - 3} more pending tasks
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Completed Tasks */}
+              {completedTasks.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    Completed Tasks ({completedTasks.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {completedTasks.map(task => {
+                      const completion = college.completedTasks.find(t => t.taskId === task.id);
+                      return (
+                        <div key={task.id} className="flex items-center justify-between p-3 rounded-lg bg-green-500/5 border border-green-500/20">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">{task.title}</p>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className={`text-xs ${getCategoryColor(task.category)}`}>
+                                  {task.category}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {task.points + (completion?.bonusPoints || 0)} pts
+                                  {completion?.bonusPoints && completion.bonusPoints > 0 && (
+                                    <span className="text-green-500"> (+{completion.bonusPoints} bonus)</span>
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          {completion?.verifiedBy && (
+                            <Badge variant="secondary" className="text-xs">
+                              Verified
+                            </Badge>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Hosted Events */}
+              {college.hostedEvents.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-blue-500" />
+                    Hosted Events ({college.hostedEvents.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {college.hostedEvents.map(event => (
+                      <div key={event.id} className="flex items-center justify-between p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
+                        <div>
+                          <p className="text-sm font-medium">{event.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(parseISO(event.date), 'MMM d, yyyy')} • {event.attendees} attendees
+                          </p>
+                        </div>
+                        <Badge variant="outline">{event.pointsAwarded} pts</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+// College Champs Tab Content
+function CollegeChampsTab() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const sortedColleges = [...mockColleges].sort((a, b) => a.rank - b.rank);
+  const filteredColleges = sortedColleges.filter(c => 
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.shortName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const totalColleges = mockColleges.length;
+  const totalPoints = mockColleges.reduce((sum, c) => sum + c.totalPoints, 0);
+  const totalCompletedTasks = mockColleges.reduce((sum, c) => sum + c.completedTasks.length, 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="glass-card">
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-primary">{totalColleges}</div>
+            <p className="text-sm text-muted-foreground">Total Colleges</p>
+          </CardContent>
+        </Card>
+        <Card className="glass-card">
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-amber-500">{predefinedTasks.length}</div>
+            <p className="text-sm text-muted-foreground">Predefined Tasks</p>
+          </CardContent>
+        </Card>
+        <Card className="glass-card">
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-green-500">{totalCompletedTasks}</div>
+            <p className="text-sm text-muted-foreground">Tasks Completed</p>
+          </CardContent>
+        </Card>
+        <Card className="glass-card">
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-blue-500">{totalPoints.toLocaleString()}</div>
+            <p className="text-sm text-muted-foreground">Total Points Awarded</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Task Management */}
+      <Card className="glass-card">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <ListTodo className="h-5 w-5 text-primary" />
+                Predefined Tasks
+              </CardTitle>
+              <CardDescription>Manage tasks that colleges need to complete</CardDescription>
+            </div>
+            <CreateTaskDialog />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {predefinedTasks.sort((a, b) => (a.order || 0) - (b.order || 0)).map(task => (
+              <div key={task.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
+                    {task.order}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{task.title}</p>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs capitalize">{task.category}</Badge>
+                      <span className="text-xs text-muted-foreground">{task.points} pts</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <CreateTaskDialog task={task} />
+                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* College Management */}
+      <Card className="glass-card">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5 text-primary" />
+                College Management
+              </CardTitle>
+              <CardDescription>Track progress and verify task completions</CardDescription>
+            </div>
+            <Input
+              placeholder="Search colleges..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-xs"
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {filteredColleges.map(college => (
+            <CollegeManagementCard key={college.id} college={college} />
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function Admin() {
   const [activeTab, setActiveTab] = useState('submissions');
   const isAdmin = currentUser.role === 'admin';
@@ -1103,6 +1725,10 @@ export default function Admin() {
                   <TabsTrigger value="participants" className="gap-2">
                     <Users className="h-4 w-4" />
                     Participants
+                  </TabsTrigger>
+                  <TabsTrigger value="college-champs" className="gap-2">
+                    <GraduationCap className="h-4 w-4" />
+                    College Champs
                   </TabsTrigger>
                 </>
               )}
@@ -1291,6 +1917,10 @@ export default function Admin() {
                       </div>
                     </CardContent>
                   </Card>
+                </TabsContent>
+
+                <TabsContent value="college-champs">
+                  <CollegeChampsTab />
                 </TabsContent>
               </>
             )}
