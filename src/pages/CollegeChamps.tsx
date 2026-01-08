@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -373,8 +374,13 @@ function CollegeDetailView({ college, onClose }: { college: College, onClose: ()
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-semibold">{member.name}</h4>
+                          <div className="flex items-center gap-2">
+                              <Link 
+                                to={`/profile/${member.id}`}
+                                className="font-semibold hover:text-primary transition-colors"
+                              >
+                                {member.name}
+                              </Link>
                               {isLead && (
                                 <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
                                   <Award className="h-3 w-3 mr-1" />

@@ -587,12 +587,12 @@ function SprintDetail({ sprint, onBack }: { sprint: Sprint; onBack: () => void }
                         <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <a 
-                          href={`/profile/${user.id}`}
+                        <Link 
+                          to={`/profile/${user.id}`}
                           className="font-medium hover:text-primary transition-colors truncate block"
                         >
                           {user.name}
-                        </a>
+                        </Link>
                         <p className="text-sm text-muted-foreground truncate">
                           {user.designation || 'Participant'}
                         </p>
