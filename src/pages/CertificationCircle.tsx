@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -341,12 +342,12 @@ function GroupDetail({ group, onBack }: { group: CertificationGroup; onBack: () 
                       <AvatarFallback>{owner.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <a 
-                        href={`/profile/${owner.id}`}
+                      <Link 
+                        to={`/profile/${owner.id}`}
                         className="font-medium hover:text-primary transition-colors"
                       >
                         {owner.name}
-                      </a>
+                      </Link>
                       <p className="text-sm text-muted-foreground">
                         {owner.designation || 'Group Owner'}
                       </p>
@@ -371,12 +372,12 @@ function GroupDetail({ group, onBack }: { group: CertificationGroup; onBack: () 
                         <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <a 
-                          href={`/profile/${member.id}`}
+                        <Link 
+                          to={`/profile/${member.id}`}
                           className="font-medium hover:text-primary transition-colors"
                         >
                           {member.name}
-                        </a>
+                        </Link>
                         <p className="text-sm text-muted-foreground">
                           {member.designation || 'Member'}
                         </p>
