@@ -227,90 +227,246 @@ function SpeakerInviteDialog({ eventType, eventId, eventTitle }: {
 }
 
 function CreateSprintDialog() {
+  const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     theme: '',
     description: '',
     startDate: '',
     endDate: '',
-    githubRepo: ''
+    githubRepo: '',
+    posterImage: '',
+    difficulty: 'intermediate' as 'beginner' | 'intermediate' | 'advanced',
+    maxParticipants: '',
+    prerequisites: '',
+    learningOutcomes: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const newSprint: Sprint = {
+      id: `s-${Date.now()}`,
+      title: formData.title,
+      theme: formData.theme,
+      description: formData.description,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      status: 'upcoming',
+      participants: 0,
+      sessions: [],
+      submissions: [],
+      githubRepo: formData.githubRepo || undefined,
+      registeredUsers: [],
+      posterImage: formData.posterImage || undefined
+    };
+
+    console.log('Creating sprint:', newSprint);
     toast.success('Sprint created successfully!');
+    setOpen(false);
+    
+    // Reset form
+    setFormData({
+      title: '',
+      theme: '',
+      description: '',
+      startDate: '',
+      endDate: '',
+      githubRepo: '',
+      posterImage: '',
+      difficulty: 'intermediate',
+      maxParticipants: '',
+      prerequisites: '',
+      learningOutcomes: ''
+    });
   };
 
+  const themes = [
+    'Serverless',
+    'Containers & Kubernetes',
+    'Machine Learning',
+    'Generative AI',
+    'Data Engineering',
+    'DevOps & CI/CD',
+    'Security & Compliance',
+    'Networking',
+    'Storage & Databases',
+    'Cost Optimization'
+  ];
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="gap-2"><Plus className="h-4 w-4" />Create Sprint</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Sprint</DialogTitle>
+          <DialogTitle>Create New Skill Sprint</DialogTitle>
           <DialogDescription>
-            Set up a new skill sprint for the community.
+            Set up a new skill sprint for the community. Add details, poster, and learning objectives.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Title</Label>
-            <Input 
-              placeholder="e.g., Serverless January"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Theme</Label>
-            <Input 
-              placeholder="e.g., Serverless"
-              value={formData.theme}
-              onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
-              required
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Info */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Basic Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Sprint Title *</Label>
+                <Input 
+                  placeholder="e.g., Serverless January"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Theme *</Label>
+                <Select value={formData.theme} onValueChange={(value) => setFormData({ ...formData, theme: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a theme" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {themes.map(theme => (
+                      <SelectItem key={theme} value={theme}>{theme}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Start Date *</Label>
+                <Input 
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>End Date *</Label>
+                <Input 
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Difficulty Level</Label>
+                <Select value={formData.difficulty} onValueChange={(value: 'beginner' | 'intermediate' | 'advanced') => setFormData({ ...formData, difficulty: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">🟢 Beginner</SelectItem>
+                    <SelectItem value="intermediate">🟡 Intermediate</SelectItem>
+                    <SelectItem value="advanced">🔴 Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="space-y-2">
-              <Label>Start Date</Label>
-              <Input 
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+              <Label>Description *</Label>
+              <Textarea 
+                rows={3}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Describe the sprint objectives and what participants will learn..."
                 required
               />
             </div>
+          </div>
+
+          {/* Poster & Resources */}
+          <div className="space-y-4 border-t pt-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Poster & Resources</h3>
             <div className="space-y-2">
-              <Label>End Date</Label>
-              <Input 
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                required
+              <Label>Sprint Poster Image</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={formData.posterImage}
+                  onChange={(e) => setFormData({ ...formData, posterImage: e.target.value })}
+                  placeholder="https://example.com/poster.jpg"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => toast.info('File upload will be available with backend')}
+                >
+                  <Upload className="h-4 w-4" />
+                </Button>
+              </div>
+              {formData.posterImage && (
+                <div className="mt-2">
+                  <img
+                    src={formData.posterImage}
+                    alt="Sprint poster preview"
+                    className="w-full h-40 object-cover rounded-lg border"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>GitHub Repo URL</Label>
+                <Input 
+                  placeholder="https://github.com/..."
+                  value={formData.githubRepo}
+                  onChange={(e) => setFormData({ ...formData, githubRepo: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Max Participants</Label>
+                <Input 
+                  type="number"
+                  placeholder="Leave empty for unlimited"
+                  value={formData.maxParticipants}
+                  onChange={(e) => setFormData({ ...formData, maxParticipants: e.target.value })}
+                  min="10"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Learning Details */}
+          <div className="space-y-4 border-t pt-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Learning Details</h3>
+            <div className="space-y-2">
+              <Label>Prerequisites</Label>
+              <Textarea 
+                rows={2}
+                value={formData.prerequisites}
+                onChange={(e) => setFormData({ ...formData, prerequisites: e.target.value })}
+                placeholder="List any prerequisites (e.g., AWS account, basic cloud knowledge)..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Learning Outcomes</Label>
+              <Textarea 
+                rows={3}
+                value={formData.learningOutcomes}
+                onChange={(e) => setFormData({ ...formData, learningOutcomes: e.target.value })}
+                placeholder="What will participants be able to do after completing this sprint?&#10;- Build serverless APIs&#10;- Deploy Lambda functions&#10;- Configure API Gateway"
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>Description</Label>
-            <Textarea 
-              rows={3}
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Describe the sprint objectives and what participants will learn..."
-              required
-            />
+
+          <div className="flex gap-2 pt-4 border-t">
+            <Button type="submit" className="flex-1">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Sprint
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
           </div>
-          <div className="space-y-2">
-            <Label>GitHub Repo URL (Optional)</Label>
-            <Input 
-              placeholder="https://github.com/..."
-              value={formData.githubRepo}
-              onChange={(e) => setFormData({ ...formData, githubRepo: e.target.value })}
-            />
-          </div>
-          <Button type="submit" className="w-full">Create Sprint</Button>
         </form>
       </DialogContent>
     </Dialog>
