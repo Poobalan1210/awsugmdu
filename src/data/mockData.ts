@@ -896,68 +896,7 @@ export const mockSpeakerInvites: SpeakerInvite[] = [
   }
 ];
 
-// Helper function to generate unified events from all sources
-export const generateUnifiedEvents = (): Event[] => {
-  const events: Event[] = [];
-  
-  // Add Sprint Sessions
-  mockSprints.forEach(sprint => {
-    sprint.sessions.forEach(session => {
-      events.push({
-        id: `sprint-${sprint.id}-${session.id}`,
-        title: session.title,
-        description: session.description,
-        date: session.date,
-        time: session.time,
-        type: 'virtual',
-        category: 'sprint',
-        attendees: sprint.participants,
-        image: session.posterImage || sprint.posterImage,
-        linkedEventId: sprint.id
-      });
-    });
-  });
-  
-  // Add Meetups
-  mockMeetups.forEach(meetup => {
-    events.push({
-      id: `meetup-${meetup.id}`,
-      title: meetup.title,
-      description: meetup.description,
-      date: meetup.date,
-      time: meetup.time,
-      type: meetup.type,
-      category: meetup.title.toLowerCase().includes('workshop') ? 'workshop' : 
-                meetup.title.toLowerCase().includes('certification') ? 'certification' : 'meetup',
-      attendees: meetup.attendees,
-      image: meetup.image,
-      linkedEventId: meetup.id
-    });
-  });
-  
-  // Add College Champs Events
-  mockColleges.forEach(college => {
-    college.hostedEvents.forEach(event => {
-      events.push({
-        id: `champs-${college.id}-${event.id}`,
-        title: `${event.title} - ${college.shortName}`,
-        description: event.description,
-        date: event.date,
-        type: event.type === 'webinar' ? 'virtual' : 
-              event.type === 'hackathon' ? 'hybrid' : 'in-person',
-        category: 'champs',
-        attendees: event.attendees,
-        linkedEventId: college.id
-      });
-    });
-  });
-  
-  // Sort by date (newest first for upcoming, oldest first for past)
-  return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-};
-
-// Generate unified events from sprints, meetups, and college champs
-export const mockEvents: Event[] = generateUnifiedEvents();
+// Note: mockEvents is generated after mockColleges is defined (see end of file)
 
 // Mock Forum Posts
 export const mockForumPosts: ForumPost[] = [
@@ -1410,3 +1349,67 @@ export const generateSpeakerInviteLink = (eventType: 'sprint' | 'meetup', eventI
   const uniqueId = Math.random().toString(36).substring(2, 15);
   return `speaker-invite-${eventType}-${eventId}-${uniqueId}`;
 };
+
+// Helper function to generate unified events from all sources
+// NOTE: This must be defined AFTER mockColleges to avoid circular dependency
+export const generateUnifiedEvents = (): Event[] => {
+  const events: Event[] = [];
+  
+  // Add Sprint Sessions
+  mockSprints.forEach(sprint => {
+    sprint.sessions.forEach(session => {
+      events.push({
+        id: `sprint-${sprint.id}-${session.id}`,
+        title: session.title,
+        description: session.description,
+        date: session.date,
+        time: session.time,
+        type: 'virtual',
+        category: 'sprint',
+        attendees: sprint.participants,
+        image: session.posterImage || sprint.posterImage,
+        linkedEventId: sprint.id
+      });
+    });
+  });
+  
+  // Add Meetups
+  mockMeetups.forEach(meetup => {
+    events.push({
+      id: `meetup-${meetup.id}`,
+      title: meetup.title,
+      description: meetup.description,
+      date: meetup.date,
+      time: meetup.time,
+      type: meetup.type,
+      category: meetup.title.toLowerCase().includes('workshop') ? 'workshop' : 
+                meetup.title.toLowerCase().includes('certification') ? 'certification' : 'meetup',
+      attendees: meetup.attendees,
+      image: meetup.image,
+      linkedEventId: meetup.id
+    });
+  });
+  
+  // Add College Champs Events
+  mockColleges.forEach(college => {
+    college.hostedEvents.forEach(event => {
+      events.push({
+        id: `champs-${college.id}-${event.id}`,
+        title: `${event.title} - ${college.shortName}`,
+        description: event.description,
+        date: event.date,
+        type: event.type === 'webinar' ? 'virtual' : 
+              event.type === 'hackathon' ? 'hybrid' : 'in-person',
+        category: 'champs',
+        attendees: event.attendees,
+        linkedEventId: college.id
+      });
+    });
+  });
+  
+  // Sort by date (newest first for upcoming, oldest first for past)
+  return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+};
+
+// Generate unified events from sprints, meetups, and college champs
+export const mockEvents: Event[] = generateUnifiedEvents();
