@@ -896,106 +896,68 @@ export const mockSpeakerInvites: SpeakerInvite[] = [
   }
 ];
 
-// Generate unified events from sprints and meetups for home page
-export const mockEvents: Event[] = [
-  // Sprint Sessions
-  {
-    id: 'e1',
-    title: 'Introduction to Serverless Architecture',
-    description: 'Learn the fundamentals of serverless computing and AWS Lambda with Priya Sharma.',
-    date: '2025-01-05',
-    time: '18:00 IST',
-    type: 'virtual',
-    category: 'sprint',
-    attendees: 45,
-    linkedEventId: 's1',
-    image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&h=400&fit=crop'
-  },
-  {
-    id: 'e8',
-    title: 'Building APIs with API Gateway',
-    description: 'Deep dive into REST and WebSocket APIs using Amazon API Gateway with Rahul Verma.',
-    date: '2025-01-15',
-    time: '18:00 IST',
-    type: 'virtual',
-    category: 'sprint',
-    attendees: 42,
-    linkedEventId: 's1',
-    image: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=800&h=400&fit=crop'
-  },
-  {
-    id: 'e2',
-    title: 'AWS re:Invent Recap 2024',
-    description: 'Catch up on all the exciting announcements from AWS re:Invent 2024.',
-    date: '2024-12-15',
-    time: '18:00 IST',
-    type: 'hybrid',
-    category: 'meetup',
-    attendees: 120,
-    linkedEventId: 'm1',
-    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'
-  },
-  {
-    id: 'e3',
-    title: 'Getting Started with Amazon Bedrock',
-    description: 'Introduction to foundation models and Amazon Bedrock. Build AI-powered apps!',
-    date: '2025-02-08',
-    time: '18:00 IST',
-    type: 'virtual',
-    category: 'sprint',
-    attendees: 32,
-    linkedEventId: 's2',
-    image: 'https://images.unsplash.com/photo-1676299081847-824916de030a?w=800&h=400&fit=crop'
-  },
-  {
-    id: 'e4',
-    title: 'AWS Certification Study Group',
-    description: 'Weekly study group for Solutions Architect Associate certification.',
-    date: '2025-01-10',
-    time: '19:00 IST',
-    type: 'virtual',
-    category: 'certification',
-    attendees: 28,
-    linkedEventId: 'm4',
-    image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&h=400&fit=crop'
-  },
-  {
-    id: 'e5',
-    title: 'Hands-on Workshop: Container Services',
-    description: 'Deep dive into ECS and EKS with hands-on labs.',
-    date: '2025-01-25',
-    time: '10:00 IST',
-    type: 'in-person',
-    category: 'workshop',
-    attendees: 35,
-    linkedEventId: 'm2',
-    image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&h=400&fit=crop'
-  },
-  {
-    id: 'e6',
-    title: 'AWS Community Day - Cloud Native',
-    description: 'A full-day event dedicated to cloud native technologies.',
-    date: '2025-02-15',
-    time: '09:00 IST',
-    type: 'hybrid',
-    category: 'meetup',
-    attendees: 85,
-    linkedEventId: 'm3',
-    image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=800&h=400&fit=crop'
-  },
-  {
-    id: 'e7',
-    title: 'AWS IAM Deep Dive',
-    description: 'Understanding IAM policies, roles, and best practices for secure AWS architectures.',
-    date: '2024-12-10',
-    time: '18:00 IST',
-    type: 'virtual',
-    category: 'sprint',
-    attendees: 38,
-    linkedEventId: 's3',
-    image: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&h=400&fit=crop'
-  }
-];
+// Helper function to generate unified events from all sources
+export const generateUnifiedEvents = (): Event[] => {
+  const events: Event[] = [];
+  
+  // Add Sprint Sessions
+  mockSprints.forEach(sprint => {
+    sprint.sessions.forEach(session => {
+      events.push({
+        id: `sprint-${sprint.id}-${session.id}`,
+        title: session.title,
+        description: session.description,
+        date: session.date,
+        time: session.time,
+        type: 'virtual',
+        category: 'sprint',
+        attendees: sprint.participants,
+        image: session.posterImage || sprint.posterImage,
+        linkedEventId: sprint.id
+      });
+    });
+  });
+  
+  // Add Meetups
+  mockMeetups.forEach(meetup => {
+    events.push({
+      id: `meetup-${meetup.id}`,
+      title: meetup.title,
+      description: meetup.description,
+      date: meetup.date,
+      time: meetup.time,
+      type: meetup.type,
+      category: meetup.title.toLowerCase().includes('workshop') ? 'workshop' : 
+                meetup.title.toLowerCase().includes('certification') ? 'certification' : 'meetup',
+      attendees: meetup.attendees,
+      image: meetup.image,
+      linkedEventId: meetup.id
+    });
+  });
+  
+  // Add College Champs Events
+  mockColleges.forEach(college => {
+    college.hostedEvents.forEach(event => {
+      events.push({
+        id: `champs-${college.id}-${event.id}`,
+        title: `${event.title} - ${college.shortName}`,
+        description: event.description,
+        date: event.date,
+        type: event.type === 'webinar' ? 'virtual' : 
+              event.type === 'hackathon' ? 'hybrid' : 'in-person',
+        category: 'champs',
+        attendees: event.attendees,
+        linkedEventId: college.id
+      });
+    });
+  });
+  
+  // Sort by date (newest first for upcoming, oldest first for past)
+  return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+};
+
+// Generate unified events from sprints, meetups, and college champs
+export const mockEvents: Event[] = generateUnifiedEvents();
 
 // Mock Forum Posts
 export const mockForumPosts: ForumPost[] = [
