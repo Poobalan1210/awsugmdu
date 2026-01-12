@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -16,28 +16,79 @@ import {
   Rocket, Calendar, Users, Github, MessageSquare, 
   Video, Send, ThumbsUp, Clock, ExternalLink,
   ChevronRight, ChevronDown, Linkedin, User,
-  CheckCircle, Image, FileText, PlayCircle
+  CheckCircle, Image, FileText, PlayCircle, Link2, Youtube
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { mockSprints, mockForumPosts, Sprint, Session, currentUser, mockUsers, getUserById } from '@/data/mockData';
 import { format, parseISO } from 'date-fns';
+import { marked } from 'marked';
 
-const getStatusBadge = (status: Sprint['status']) => {
-  switch (status) {
-    case 'active':
-      return <Badge className="bg-green-500/10 text-green-600 border-green-500/30">Active</Badge>;
-    case 'upcoming':
-      return <Badge variant="secondary">Upcoming</Badge>;
-    case 'completed':
-      return <Badge variant="outline">Completed</Badge>;
+// Helper to parse markdown or HTML content
+function parseContent(content: string): string {
+  const hasHtmlTags = /<[a-z][\s\S]*>/i.test(content);
+  if (hasHtmlTags) {
+    return content;
   }
-};
+  return marked.parse(content) as string;
+}
+
+function SprintCard({ sprint, onSelect }: { sprint: Sprint; onSelect: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card className="glass-card hover-lift cursor-pointer h-full" onClick={onSelect}>
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <Badge variant="outline" className="mb-2">{sprint.theme}</Badge>
+            <span className="text-sm text-muted-foreground">
+              {format(parseISO(sprint.startDate), 'MMM yyyy')}
+            </span>
+          </div>
+          
+          <h3 className="text-xl font-bold mb-2">{sprint.title}</h3>
+          
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+            {sprint.description}
+          </p>
+          
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              {sprint.participants}
+            </div>
+            <div className="flex items-center gap-1">
+              <Video className="h-4 w-4" />
+              {sprint.sessions.length} sessions
+            </div>
+          </div>
+          
+          <Button className="w-full mt-4" variant={sprint.status === 'active' ? 'default' : 'outline'}>
+            {sprint.status === 'active' ? 'Join Sprint' : 'View Details'}
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
 
 function SessionCard({ session, isExpanded, onToggle }: { 
   session: Session; 
   isExpanded: boolean;
   onToggle: () => void;
 }) {
+  const parsedDescription = useMemo(() => {
+    if (session.richDescription) {
+      return parseContent(session.richDescription);
+    }
+    return null;
+  }, [session.richDescription]);
+
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
       <Card className="glass-card overflow-hidden">
@@ -216,7 +267,14 @@ function SessionCard({ session, isExpanded, onToggle }: {
                 {/* Session Details */}
                 <div>
                   <h4 className="font-semibold mb-2">About this Session</h4>
-                  <p className="text-muted-foreground">{session.description}</p>
+                  {parsedDescription ? (
+                    <div 
+                      className="prose prose-sm max-w-none dark:prose-invert text-muted-foreground"
+                      dangerouslySetInnerHTML={{ __html: parsedDescription }}
+                    />
+                  ) : (
+                    <p className="text-muted-foreground">{session.description}</p>
+                  )}
                 </div>
 
                 {/* Agenda */}
@@ -236,11 +294,27 @@ function SessionCard({ session, isExpanded, onToggle }: {
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-3 pt-4 border-t">
-                  {session.meetingLink && (
+                  {session.meetupUrl && (
                     <Button asChild>
+                      <a href={session.meetupUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Register on Meetup
+                      </a>
+                    </Button>
+                  )}
+                  {session.meetingLink && (
+                    <Button asChild variant={session.meetupUrl ? "outline" : "default"}>
                       <a href={session.meetingLink} target="_blank" rel="noopener noreferrer">
                         <Video className="h-4 w-4 mr-2" />
                         Join Session
+                      </a>
+                    </Button>
+                  )}
+                  {session.youtubeUrl && (
+                    <Button variant="outline" asChild>
+                      <a href={session.youtubeUrl} target="_blank" rel="noopener noreferrer">
+                        <Youtube className="h-4 w-4 mr-2" />
+                        Watch on YouTube
                       </a>
                     </Button>
                   )}
@@ -270,65 +344,6 @@ function SessionCard({ session, isExpanded, onToggle }: {
   );
 }
 
-function SprintCard({ sprint, onSelect }: { sprint: Sprint; onSelect: () => void }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -5 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card className="glass-card hover-lift cursor-pointer h-full" onClick={onSelect}>
-        {sprint.posterImage && (
-          <div className="relative h-40 overflow-hidden rounded-t-lg">
-            <img 
-              src={sprint.posterImage} 
-              alt={sprint.title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-            <div className="absolute top-3 left-3">
-              {getStatusBadge(sprint.status)}
-            </div>
-          </div>
-        )}
-        <CardContent className={sprint.posterImage ? "p-5" : "p-6"}>
-          {!sprint.posterImage && (
-            <div className="flex items-start justify-between mb-4">
-              {getStatusBadge(sprint.status)}
-              <span className="text-sm text-muted-foreground">
-                {format(parseISO(sprint.startDate), 'MMM yyyy')}
-              </span>
-            </div>
-          )}
-          
-          <h3 className="text-xl font-bold mb-2">{sprint.title}</h3>
-          <Badge variant="outline" className="mb-4">{sprint.theme}</Badge>
-          
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-            {sprint.description}
-          </p>
-          
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              {sprint.participants}
-            </div>
-            <div className="flex items-center gap-1">
-              <Video className="h-4 w-4" />
-              {sprint.sessions.length} sessions
-            </div>
-          </div>
-          
-          <Button className="w-full mt-4" variant={sprint.status === 'active' ? 'default' : 'outline'}>
-            {sprint.status === 'active' ? 'Join Sprint' : 'View Details'}
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
 
 function JoinSprintDialog({ sprint, open, onOpenChange }: { 
   sprint: Sprint; 
@@ -460,19 +475,7 @@ function SprintDetail({ sprint, onBack }: { sprint: Sprint; onBack: () => void }
       </div>
 
       <div className="glass-card p-6 md:p-8 rounded-lg">
-        {sprint.posterImage && (
-          <div className="relative h-48 md:h-64 -mx-6 -mt-6 md:-mx-8 md:-mt-8 mb-6 overflow-hidden rounded-t-lg">
-            <img 
-              src={sprint.posterImage} 
-              alt={sprint.title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
-          </div>
-        )}
-        
         <div className="flex flex-wrap items-center gap-4 mb-4">
-          {getStatusBadge(sprint.status)}
           <Badge variant="outline" className="text-base">{sprint.theme}</Badge>
         </div>
         
@@ -676,6 +679,17 @@ function SprintDetail({ sprint, onBack }: { sprint: Sprint; onBack: () => void }
                               <MessageSquare className="h-4 w-4" />
                               {post.replies.length} replies
                             </button>
+                            <button 
+                              className="flex items-center gap-1 hover:text-primary transition-colors"
+                              onClick={() => {
+                                const url = `${window.location.origin}/skill-sprint?post=${post.id}`;
+                                navigator.clipboard.writeText(url);
+                                toast.success('Link copied to clipboard!');
+                              }}
+                            >
+                              <Link2 className="h-4 w-4" />
+                              Share
+                            </button>
                           </div>
                           {/* Replies */}
                           {post.replies.length > 0 && (
@@ -692,6 +706,17 @@ function SprintDetail({ sprint, onBack }: { sprint: Sprint; onBack: () => void }
                                       <span className="text-muted-foreground">· {format(parseISO(reply.createdAt), 'MMM d')}</span>
                                     </div>
                                     <p className="text-sm text-muted-foreground">{reply.content}</p>
+                                    <button 
+                                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors mt-1"
+                                      onClick={() => {
+                                        const url = `${window.location.origin}/skill-sprint?reply=${reply.id}`;
+                                        navigator.clipboard.writeText(url);
+                                        toast.success('Link copied to clipboard!');
+                                      }}
+                                    >
+                                      <Link2 className="h-3 w-3" />
+                                      Share
+                                    </button>
                                   </div>
                                 </div>
                               ))}

@@ -1,23 +1,38 @@
-import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, Variants } from 'framer-motion';
+import { marked } from 'marked';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Calendar, MapPin, Users, Video, Clock, 
-  ArrowLeft, ExternalLink, CheckCircle, UserPlus,
-  Linkedin, Github, BookOpen, ListChecks, Star, AlertCircle
+  ArrowLeft, ExternalLink,
+  Linkedin, Github
 } from 'lucide-react';
-import { mockMeetups, Meetup, currentUser } from '@/data/mockData';
+import { mockMeetups, Meetup } from '@/data/mockData';
 import { format, parseISO, isPast } from 'date-fns';
+
+// Configure marked for safe HTML rendering
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+});
+
+// Helper to parse markdown or HTML content
+function parseContent(content: string): string {
+  // Check if content looks like HTML (has HTML tags)
+  const hasHtmlTags = /<[a-z][\s\S]*>/i.test(content);
+  if (hasHtmlTags) {
+    return content;
+  }
+  // Otherwise parse as markdown
+  return marked.parse(content) as string;
+}
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -35,7 +50,6 @@ const cardVariants: Variants = {
 function MeetupCard({ meetup, onSelect }: { meetup: Meetup; onSelect: () => void }) {
   const eventDate = parseISO(meetup.date);
   const isUpcoming = !isPast(eventDate);
-  const isRegistered = meetup.registeredUsers.includes(currentUser.id);
   const spotsLeft = meetup.maxAttendees ? meetup.maxAttendees - meetup.attendees : null;
 
   return (
@@ -57,13 +71,6 @@ function MeetupCard({ meetup, onSelect }: { meetup: Meetup; onSelect: () => void
               {meetup.type === 'in-person' && <MapPin className="h-3 w-3 mr-1" />}
               {meetup.type.charAt(0).toUpperCase() + meetup.type.slice(1)}
             </Badge>
-            {!isUpcoming && <Badge variant="outline">Completed</Badge>}
-            {isRegistered && isUpcoming && (
-              <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Registered
-              </Badge>
-            )}
           </div>
           
           <h3 className="font-semibold text-lg mb-2 line-clamp-2">{meetup.title}</h3>
@@ -110,7 +117,7 @@ function MeetupCard({ meetup, onSelect }: { meetup: Meetup; onSelect: () => void
           )}
 
           <Button className="w-full" variant={isUpcoming ? 'default' : 'outline'}>
-            {isUpcoming ? (isRegistered ? 'View Details' : 'Register Now') : 'View Details'}
+            {isUpcoming ? 'View & Register' : 'View Details'}
           </Button>
         </CardContent>
       </Card>
@@ -119,10 +126,13 @@ function MeetupCard({ meetup, onSelect }: { meetup: Meetup; onSelect: () => void
 }
 
 function MeetupDetail({ meetup, onBack }: { meetup: Meetup; onBack: () => void }) {
-  const [showJoinDialog, setShowJoinDialog] = useState(false);
   const eventDate = parseISO(meetup.date);
-  const isUpcoming = !isPast(eventDate);
-  const isRegistered = meetup.registeredUsers.includes(currentUser.id);
+
+  // Parse markdown or HTML content
+  const parsedDescription = useMemo(() => {
+    if (!meetup.richDescription) return null;
+    return parseContent(meetup.richDescription);
+  }, [meetup.richDescription]);
 
   return (
     <motion.div
@@ -135,33 +145,32 @@ function MeetupDetail({ meetup, onBack }: { meetup: Meetup; onBack: () => void }
         Back to Meetups
       </Button>
 
-      {/* Hero Section */}
-      <div className="relative">
-        {meetup.image && (
-          <div className="h-64 md:h-80 rounded-xl overflow-hidden">
-            <img 
-              src={meetup.image} 
-              alt={meetup.title} 
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-          </div>
-        )}
-        
-        <div className={`${meetup.image ? 'absolute bottom-0 left-0 right-0 p-6' : 'glass-card rounded-xl p-6'}`}>
+      {/* Event Poster - Full width, separate from content */}
+      {meetup.image && (
+        <div className="rounded-xl overflow-hidden">
+          <img 
+            src={meetup.image} 
+            alt={meetup.title} 
+            className="w-full h-auto object-contain"
+          />
+        </div>
+      )}
+
+      {/* Event Details Card - Below the poster */}
+      <Card className="glass-card">
+        <CardContent className="p-6">
           <div className="flex flex-wrap gap-2 mb-4">
             <Badge variant="secondary">
               {meetup.type === 'virtual' && <Video className="h-3 w-3 mr-1" />}
               {meetup.type === 'in-person' && <MapPin className="h-3 w-3 mr-1" />}
               {meetup.type}
             </Badge>
-            {meetup.status === 'completed' && <Badge variant="outline">Completed</Badge>}
           </div>
           
           <h1 className="text-2xl md:text-3xl font-bold mb-4">{meetup.title}</h1>
           <p className="text-muted-foreground mb-6">{meetup.description}</p>
           
-          <div className="flex flex-wrap gap-6 text-sm">
+          <div className="flex flex-wrap gap-6 text-sm mb-6">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-primary" />
               {format(eventDate, 'EEEE, MMMM d, yyyy')}
@@ -182,53 +191,16 @@ function MeetupDetail({ meetup, onBack }: { meetup: Meetup; onBack: () => void }
             </div>
           </div>
 
-          {isUpcoming && (
-            <div className="mt-6 flex gap-4">
-              {isRegistered ? (
-                <Button disabled className="gap-2">
-                  <CheckCircle className="h-4 w-4" />
-                  Already Registered
-                </Button>
-              ) : (
-                <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
-                  <DialogTrigger asChild>
-                    <Button size="lg" className="gap-2">
-                      <UserPlus className="h-4 w-4" />
-                      Register Now
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Register for {meetup.title}</DialogTitle>
-                      <DialogDescription>
-                        Fill in your details to register for this event.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
-                        <Input id="name" defaultValue={currentUser.name} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" defaultValue={currentUser.email} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="designation">Designation</Label>
-                        <Input id="designation" placeholder="e.g., Software Engineer" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="company">Company/Organization</Label>
-                        <Input id="company" placeholder="e.g., Tech Corp" />
-                      </div>
-                      <Button type="submit" className="w-full" onClick={() => setShowJoinDialog(false)}>
-                        Complete Registration
-                      </Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              )}
-              {meetup.meetingLink && isRegistered && (
+          {/* Register on Meetup Button */}
+          {meetup.meetupUrl && (
+            <div className="flex flex-wrap gap-4">
+              <Button size="lg" asChild className="gap-2">
+                <a href={meetup.meetupUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4" />
+                  Register on Meetup
+                </a>
+              </Button>
+              {meetup.meetingLink && (
                 <Button variant="outline" size="lg" asChild>
                   <a href={meetup.meetingLink} target="_blank" rel="noopener noreferrer" className="gap-2">
                     <ExternalLink className="h-4 w-4" />
@@ -238,110 +210,25 @@ function MeetupDetail({ meetup, onBack }: { meetup: Meetup; onBack: () => void }
               )}
             </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* What to Expect Section */}
-      {meetup.whatToExpect && (
+      {/* Rich Description Section - Supports HTML and Markdown */}
+      {parsedDescription && (
         <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              What to Expect
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">{meetup.whatToExpect}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Highlights Section */}
-      {meetup.highlights && meetup.highlights.length > 0 && (
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-primary" />
-              Event Highlights
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {meetup.highlights.map((highlight, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-emerald-500 mt-1 flex-shrink-0" />
-                  <span>{highlight}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Prerequisites Section */}
-      {meetup.prerequisites && meetup.prerequisites.length > 0 && (
-        <Card className="glass-card border-amber-500/30">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-500" />
-              Prerequisites
-            </CardTitle>
-            <CardDescription>Please ensure you meet these requirements before attending</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {meetup.prerequisites.map((prereq, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <div className="h-4 w-4 rounded-full bg-amber-500/20 flex items-center justify-center mt-1 flex-shrink-0">
-                    <span className="text-[10px] font-bold text-amber-600">{index + 1}</span>
-                  </div>
-                  <span>{prereq}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Agenda Section */}
-      {meetup.agenda && meetup.agenda.length > 0 && (
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ListChecks className="h-5 w-5 text-primary" />
-              Event Agenda
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {meetup.agenda.map((item, index) => {
-                const speaker = item.speakerId 
-                  ? meetup.speakers.find(s => s.id === item.speakerId) 
-                  : null;
-                return (
-                  <div key={index} className="flex gap-4 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                    <div className="text-sm font-mono text-primary min-w-[60px]">
-                      {item.time}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium">{item.title}</h4>
-                      {item.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-                      )}
-                      {speaker && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={speaker.photo} alt={speaker.name} />
-                            <AvatarFallback>{speaker.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm text-muted-foreground">{speaker.name}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          <CardContent className="pt-6">
+            <div 
+              className="prose prose-sm max-w-none dark:prose-invert
+                prose-headings:text-foreground prose-headings:font-semibold
+                prose-h2:text-xl prose-h2:mt-0 prose-h2:mb-4
+                prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
+                prose-p:text-muted-foreground prose-p:leading-relaxed
+                prose-ul:text-muted-foreground prose-ul:my-4
+                prose-li:my-1
+                prose-strong:text-foreground
+                prose-em:text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: parsedDescription }}
+            />
           </CardContent>
         </Card>
       )}

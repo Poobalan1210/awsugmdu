@@ -257,8 +257,7 @@ function CreateSprintDialog() {
       sessions: [],
       submissions: [],
       githubRepo: formData.githubRepo || undefined,
-      registeredUsers: [],
-      posterImage: formData.posterImage || undefined
+      registeredUsers: []
     };
 
     console.log('Creating sprint:', newSprint);
@@ -2052,6 +2051,7 @@ export default function Admin() {
                     ))}
                   </div>
                 </TabsContent>
+
 
                 <TabsContent value="participants">
                   <Card className="glass-card">
