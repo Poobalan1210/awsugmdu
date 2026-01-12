@@ -192,34 +192,48 @@ function MeetupDetail({ meetup, onBack }: { meetup: Meetup; onBack: () => void }
             </div>
           </div>
 
-          {/* Register on Meetup Button */}
-          {meetup.meetupUrl && (
-            <div className="flex flex-wrap gap-4">
-              <Button size="lg" asChild className="gap-2">
-                <a href={meetup.meetupUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4" />
-                  Register on Meetup
-                </a>
-              </Button>
-              {meetup.meetingLink && (
-                <Button variant="outline" size="lg" asChild>
-                  <a href={meetup.meetingLink} target="_blank" rel="noopener noreferrer" className="gap-2">
-                    {isUpcoming ? (
-                      <>
-                        <ExternalLink className="h-4 w-4" />
-                        Join Meeting
-                      </>
-                    ) : (
-                      <>
-                        <PlayCircle className="h-4 w-4" />
-                        Watch Recording
-                      </>
-                    )}
-                  </a>
-                </Button>
-              )}
-            </div>
-          )}
+          {/* Action Buttons - Different for upcoming vs past events */}
+          <div className="flex flex-wrap gap-4">
+            {isUpcoming ? (
+              <>
+                {meetup.meetupUrl && (
+                  <Button size="lg" asChild className="gap-2">
+                    <a href={meetup.meetupUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                      Register on Meetup
+                    </a>
+                  </Button>
+                )}
+                {meetup.meetingLink && (
+                  <Button variant="outline" size="lg" asChild className="gap-2">
+                    <a href={meetup.meetingLink} target="_blank" rel="noopener noreferrer">
+                      <Video className="h-4 w-4" />
+                      Join Event
+                    </a>
+                  </Button>
+                )}
+              </>
+            ) : (
+              <>
+                {meetup.meetingLink && (
+                  <Button size="lg" asChild className="gap-2">
+                    <a href={meetup.meetingLink} target="_blank" rel="noopener noreferrer">
+                      <PlayCircle className="h-4 w-4" />
+                      Watch Recording
+                    </a>
+                  </Button>
+                )}
+                {meetup.meetupUrl && (
+                  <Button variant="outline" size="lg" asChild className="gap-2">
+                    <a href={meetup.meetupUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                      View on Meetup
+                    </a>
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
         </CardContent>
       </Card>
 
