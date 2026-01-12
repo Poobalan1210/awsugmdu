@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Calendar, MapPin, Users, Video, Clock, 
-  ArrowLeft, ExternalLink,
+  ArrowLeft, ExternalLink, PlayCircle,
   Linkedin, Github
 } from 'lucide-react';
 import { mockMeetups, Meetup } from '@/data/mockData';
@@ -127,6 +127,7 @@ function MeetupCard({ meetup, onSelect }: { meetup: Meetup; onSelect: () => void
 
 function MeetupDetail({ meetup, onBack }: { meetup: Meetup; onBack: () => void }) {
   const eventDate = parseISO(meetup.date);
+  const isUpcoming = !isPast(eventDate);
 
   // Parse markdown or HTML content
   const parsedDescription = useMemo(() => {
@@ -203,8 +204,17 @@ function MeetupDetail({ meetup, onBack }: { meetup: Meetup; onBack: () => void }
               {meetup.meetingLink && (
                 <Button variant="outline" size="lg" asChild>
                   <a href={meetup.meetingLink} target="_blank" rel="noopener noreferrer" className="gap-2">
-                    <ExternalLink className="h-4 w-4" />
-                    Join Meeting
+                    {isUpcoming ? (
+                      <>
+                        <ExternalLink className="h-4 w-4" />
+                        Join Meeting
+                      </>
+                    ) : (
+                      <>
+                        <PlayCircle className="h-4 w-4" />
+                        Watch Recording
+                      </>
+                    )}
                   </a>
                 </Button>
               )}
@@ -212,26 +222,6 @@ function MeetupDetail({ meetup, onBack }: { meetup: Meetup; onBack: () => void }
           )}
         </CardContent>
       </Card>
-
-      {/* Rich Description Section - Supports HTML and Markdown */}
-      {parsedDescription && (
-        <Card className="glass-card">
-          <CardContent className="pt-6">
-            <div 
-              className="prose prose-sm max-w-none dark:prose-invert
-                prose-headings:text-foreground prose-headings:font-semibold
-                prose-h2:text-xl prose-h2:mt-0 prose-h2:mb-4
-                prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
-                prose-p:text-muted-foreground prose-p:leading-relaxed
-                prose-ul:text-muted-foreground prose-ul:my-4
-                prose-li:my-1
-                prose-strong:text-foreground
-                prose-em:text-muted-foreground"
-              dangerouslySetInnerHTML={{ __html: parsedDescription }}
-            />
-          </CardContent>
-        </Card>
-      )}
 
       {/* Speakers Section */}
       {meetup.speakers.length > 0 && (
@@ -273,6 +263,26 @@ function MeetupDetail({ meetup, onBack }: { meetup: Meetup; onBack: () => void }
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Rich Description Section - Supports HTML and Markdown */}
+      {parsedDescription && (
+        <Card className="glass-card">
+          <CardContent className="pt-6">
+            <div 
+              className="prose prose-sm max-w-none dark:prose-invert
+                prose-headings:text-foreground prose-headings:font-semibold
+                prose-h2:text-xl prose-h2:mt-0 prose-h2:mb-4
+                prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
+                prose-p:text-muted-foreground prose-p:leading-relaxed
+                prose-ul:text-muted-foreground prose-ul:my-4
+                prose-li:my-1
+                prose-strong:text-foreground
+                prose-em:text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: parsedDescription }}
+            />
           </CardContent>
         </Card>
       )}
