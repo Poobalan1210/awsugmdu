@@ -67,9 +67,9 @@ function SprintCard({ sprint, onSelect }: { sprint: Sprint; onSelect: () => void
             </div>
           </div>
           
-          <Button size="sm" className="w-full gap-1">
+          <Button className="w-full mt-4" variant="outline">
             View Details
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </CardContent>
       </Card>
@@ -88,6 +88,27 @@ function SessionCard({ session, isExpanded, onToggle }: {
     }
     return null;
   }, [session.richDescription]);
+
+  const handleRegisterOnMeetup = () => {
+    // Add session to user activity
+    toast.success(`Registered for "${session.title}"! Redirecting to Meetup...`);
+    
+    // Log the activity (in a real app, this would save to database)
+    console.log('User activity added:', {
+      type: 'session_registration',
+      sessionId: session.id,
+      sessionTitle: session.title,
+      userId: currentUser.id,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Redirect to meetup after a brief delay
+    if (session.meetupUrl) {
+      setTimeout(() => {
+        window.open(session.meetupUrl, '_blank', 'noopener,noreferrer');
+      }, 500);
+    }
+  };
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
@@ -295,16 +316,7 @@ function SessionCard({ session, isExpanded, onToggle }: {
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-3 pt-4 border-t">
                   {session.meetupUrl && (
-                    <Button 
-                      onClick={() => {
-                        // Add session to user activity
-                        toast.success(`Registered for "${session.title}"! Redirecting to Meetup...`);
-                        // Redirect to meetup after a brief delay
-                        setTimeout(() => {
-                          window.open(session.meetupUrl, '_blank', 'noopener,noreferrer');
-                        }, 500);
-                      }}
-                    >
+                    <Button onClick={handleRegisterOnMeetup}>
                       <ExternalLink className="h-4 w-4 mr-2" />
                       Register on Meetup
                     </Button>
