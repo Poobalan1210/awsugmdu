@@ -20,7 +20,7 @@ import {
   Upload, X, UserPlus, Check, ChevronDown, GraduationCap,
   Trophy, ListTodo, ClipboardCheck, Target, Shield, UserCog
 } from 'lucide-react';
-import { mockSprints, mockMeetups, currentUser, Submission, generateSpeakerInviteLink, Sprint, Session, SessionPerson, mockUsers, User as UserType, predefinedTasks, mockColleges, CollegeTask, College, getTaskById, getUserById, communityRoles, mockUserRoles, CommunityRole, UserRoleAssignment } from '@/data/mockData';
+import { mockSprints, mockMeetups, currentUser, Submission, generateSpeakerInviteLink, Sprint, Session, SessionPerson, mockUsers, User as UserType, predefinedTasks, mockColleges, CollegeTask, College, getTaskById, getUserById, communityRoles, mockUserRoles, CommunityRole, UserRoleAssignment, PointActivity, mockPointActivities } from '@/data/mockData';
 import { Progress } from '@/components/ui/progress';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -1776,12 +1776,18 @@ function CollegeChampsTab() {
   );
 }
 
-// Role Management Tab Component
-function RoleManagementTab() {
+// Members Tab Component with integrated role management and points awarding
+function MembersTab() {
   const [userRoles, setUserRoles] = useState<UserRoleAssignment[]>(mockUserRoles);
+  const [pointActivities, setPointActivities] = useState<PointActivity[]>(mockPointActivities);
+  const [userPoints, setUserPoints] = useState<Record<string, number>>(
+    () => mockUsers.reduce((acc, u) => ({ ...acc, [u.id]: u.points }), {})
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAwardDialogOpen, setIsAwardDialogOpen] = useState(false);
+  const [awardForm, setAwardForm] = useState({ points: '', reason: '' });
 
   const filteredUsers = mockUsers.filter(user => 
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1792,7 +1798,19 @@ function RoleManagementTab() {
     return userRoles.filter(ur => ur.userId === userId).map(ur => ur.role);
   };
 
+  const getUserActivities = (userId: string): PointActivity[] => {
+    return pointActivities.filter(pa => pa.userId === userId).sort((a, b) => 
+      new Date(b.awardedAt).getTime() - new Date(a.awardedAt).getTime()
+    );
+  };
+
   const handleToggleRole = (userId: string, role: CommunityRole) => {
+    // Don't allow removing the member role
+    if (role === 'member') {
+      toast.error("Member role cannot be removed");
+      return;
+    }
+    
     const existingRoleAssignment = userRoles.find(ur => ur.userId === userId && ur.role === role);
     
     if (existingRoleAssignment) {
@@ -1813,6 +1831,40 @@ function RoleManagementTab() {
     }
   };
 
+  const handleAwardPoints = () => {
+    if (!selectedUser || !awardForm.points || !awardForm.reason) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    const pointsNum = parseInt(awardForm.points);
+    if (isNaN(pointsNum) || pointsNum <= 0) {
+      toast.error("Please enter a valid positive number");
+      return;
+    }
+
+    // Create new activity
+    const newActivity: PointActivity = {
+      id: `pa-${Date.now()}`,
+      userId: selectedUser.id,
+      points: pointsNum,
+      reason: awardForm.reason,
+      type: 'adhoc',
+      awardedBy: currentUser.id,
+      awardedAt: new Date().toISOString().split('T')[0]
+    };
+
+    setPointActivities(prev => [...prev, newActivity]);
+    setUserPoints(prev => ({
+      ...prev,
+      [selectedUser.id]: (prev[selectedUser.id] || 0) + pointsNum
+    }));
+
+    toast.success(`Awarded ${pointsNum} points to ${selectedUser.name}`);
+    setAwardForm({ points: '', reason: '' });
+    setIsAwardDialogOpen(false);
+  };
+
   const getRoleInfo = (role: CommunityRole) => {
     return communityRoles.find(r => r.value === role);
   };
@@ -1824,13 +1876,13 @@ function RoleManagementTab() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-primary" />
-                Role Management
+                <Users className="h-5 w-5 text-primary" />
+                Community Members
               </CardTitle>
-              <CardDescription>Assign and manage user roles across the community</CardDescription>
+              <CardDescription>View members and manage their roles</CardDescription>
             </div>
             <Input
-              placeholder="Search users..."
+              placeholder="Search members..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-xs"
@@ -1838,33 +1890,24 @@ function RoleManagementTab() {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Role Legend */}
-          <div className="flex flex-wrap gap-2 mb-6 p-4 bg-muted/50 rounded-lg">
-            <span className="text-sm font-medium text-muted-foreground mr-2">Available Roles:</span>
-            {communityRoles.map(role => (
-              <Badge key={role.value} variant="outline" className="gap-1">
-                <span>{role.icon}</span>
-                {role.label}
-              </Badge>
-            ))}
-          </div>
-
           {/* Users Table */}
           <div className="rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Current Roles</TableHead>
+                  <TableHead>Member</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Roles</TableHead>
+                  <TableHead>Points</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.map(user => {
                   const roles = getUserRoles(user.id);
+                  const currentPoints = userPoints[user.id] || user.points;
                   return (
-                    <TableRow key={user.id}>
+                    <TableRow key={user.id} className="cursor-pointer hover:bg-muted/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
@@ -1877,8 +1920,13 @@ function RoleManagementTab() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {user.email}
+                      <TableCell>
+                        <div className="text-sm">
+                          <p className="text-muted-foreground">{user.email}</p>
+                          {user.company && (
+                            <p className="text-xs text-muted-foreground">{user.company}</p>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
@@ -1897,8 +1945,14 @@ function RoleManagementTab() {
                               );
                             })
                           ) : (
-                            <span className="text-sm text-muted-foreground">No roles assigned</span>
+                            <span className="text-sm text-muted-foreground">—</span>
                           )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Trophy className="h-4 w-4 text-amber-500" />
+                          <span className="font-medium">{currentPoints}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
@@ -1916,60 +1970,162 @@ function RoleManagementTab() {
                               }}
                               className="gap-1"
                             >
-                              <UserCog className="h-4 w-4" />
-                              Manage Roles
+                              <Eye className="h-4 w-4" />
+                              View
                             </Button>
                           </DialogTrigger>
-                          <DialogContent>
+                          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
-                              <DialogTitle>Manage Roles for {user.name}</DialogTitle>
+                              <DialogTitle>Member Profile</DialogTitle>
                               <DialogDescription>
-                                Toggle roles on or off for this user. Changes are saved automatically.
+                                View member details and manage their roles
                               </DialogDescription>
                             </DialogHeader>
-                            <div className="py-4">
-                              <div className="flex items-center gap-3 mb-6 p-4 bg-muted/50 rounded-lg">
-                                <Avatar className="h-12 w-12">
+                            <div className="py-4 space-y-6">
+                              {/* Member Info */}
+                              <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                                <Avatar className="h-16 w-16">
                                   <AvatarImage src={user.avatar} />
-                                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                  <AvatarFallback className="text-xl">{user.name.charAt(0)}</AvatarFallback>
                                 </Avatar>
-                                <div>
-                                  <p className="font-medium">{user.name}</p>
+                                <div className="flex-1">
+                                  <p className="text-lg font-semibold">{user.name}</p>
                                   <p className="text-sm text-muted-foreground">{user.email}</p>
+                                  {user.designation && (
+                                    <p className="text-sm text-muted-foreground">{user.designation} {user.company && `at ${user.company}`}</p>
+                                  )}
+                                </div>
+                                <div className="text-right">
+                                  <div className="flex items-center gap-1 justify-end">
+                                    <Trophy className="h-5 w-5 text-amber-500" />
+                                    <span className="text-xl font-bold">{userPoints[user.id] || user.points}</span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">points</p>
                                 </div>
                               </div>
-                              <div className="space-y-3">
-                                {communityRoles.map(role => {
-                                  const hasRole = roles.includes(role.value);
-                                  return (
-                                    <div 
-                                      key={role.value}
-                                      className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${hasRole ? 'bg-primary/10 border-primary' : 'hover:bg-muted/50'}`}
-                                    >
-                                      <div className="flex items-center gap-3">
-                                        <span className="text-xl">{role.icon}</span>
-                                        <div>
-                                          <p className="font-medium">{role.label}</p>
-                                          <p className="text-xs text-muted-foreground">{role.description}</p>
-                                        </div>
-                                      </div>
-                                      <Button
-                                        variant={hasRole ? "default" : "outline"}
-                                        size="sm"
-                                        onClick={() => handleToggleRole(user.id, role.value)}
+
+                              {/* Role Management Section */}
+                              <div>
+                                <h4 className="font-medium mb-3 flex items-center gap-2">
+                                  <Shield className="h-4 w-4 text-primary" />
+                                  Manage Roles
+                                </h4>
+                                <div className="space-y-2">
+                                  {communityRoles.map(role => {
+                                    const hasRole = roles.includes(role.value);
+                                    const isMemberRole = role.value === 'member';
+                                    return (
+                                      <div 
+                                        key={role.value}
+                                        className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${hasRole ? 'bg-primary/10 border-primary' : 'hover:bg-muted/50'}`}
                                       >
-                                        {hasRole ? (
-                                          <>
-                                            <Check className="h-4 w-4 mr-1" />
-                                            Assigned
-                                          </>
-                                        ) : (
-                                          'Assign'
-                                        )}
-                                      </Button>
+                                        <div className="flex items-center gap-3">
+                                          <span className="text-xl">{role.icon}</span>
+                                          <div>
+                                            <p className="font-medium text-sm">{role.label}</p>
+                                            <p className="text-xs text-muted-foreground">{role.description}</p>
+                                          </div>
+                                        </div>
+                                        <Button
+                                          variant={hasRole ? "default" : "outline"}
+                                          size="sm"
+                                          onClick={() => handleToggleRole(user.id, role.value)}
+                                          disabled={isMemberRole && hasRole}
+                                        >
+                                          {hasRole ? (
+                                            <>
+                                              <Check className="h-4 w-4 mr-1" />
+                                              {isMemberRole ? 'Default' : 'Assigned'}
+                                            </>
+                                          ) : (
+                                            'Assign'
+                                          )}
+                                        </Button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* Points Activity Section */}
+                              <div>
+                                <h4 className="font-medium mb-3 flex items-center gap-2">
+                                  <Award className="h-4 w-4 text-amber-500" />
+                                  Points Activity
+                                </h4>
+                                <div className="space-y-2 max-h-40 overflow-y-auto">
+                                  {getUserActivities(user.id).length > 0 ? (
+                                    getUserActivities(user.id).map(activity => (
+                                      <div key={activity.id} className="flex items-center justify-between p-2 bg-muted/30 rounded text-sm">
+                                        <div className="flex-1">
+                                          <p className="font-medium">{activity.reason}</p>
+                                          <p className="text-xs text-muted-foreground">
+                                            {format(parseISO(activity.awardedAt), 'MMM d, yyyy')}
+                                            {activity.type === 'adhoc' && ' • Ad-hoc award'}
+                                          </p>
+                                        </div>
+                                        <Badge variant="outline" className="text-green-600 border-green-600">
+                                          +{activity.points}
+                                        </Badge>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <p className="text-sm text-muted-foreground text-center py-4">No activity recorded yet</p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Additional Actions */}
+                              <div className="flex gap-2 pt-2 border-t">
+                                <Button variant="outline" size="sm" className="gap-1 flex-1">
+                                  <Mail className="h-4 w-4" />
+                                  Send Email
+                                </Button>
+                                <Dialog open={isAwardDialogOpen} onOpenChange={setIsAwardDialogOpen}>
+                                  <DialogTrigger asChild>
+                                    <Button size="sm" className="gap-1 flex-1">
+                                      <Award className="h-4 w-4" />
+                                      Award Points
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Award Points to {user.name}</DialogTitle>
+                                      <DialogDescription>
+                                        Add ad-hoc points with a reason. This will be recorded in their activity.
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                      <div className="space-y-2">
+                                        <Label>Reason / Activity Name *</Label>
+                                        <Input
+                                          placeholder="e.g., Community contribution, Event help..."
+                                          value={awardForm.reason}
+                                          onChange={(e) => setAwardForm(prev => ({ ...prev, reason: e.target.value }))}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label>Number of Points *</Label>
+                                        <Input
+                                          type="number"
+                                          placeholder="e.g., 50"
+                                          min="1"
+                                          value={awardForm.points}
+                                          onChange={(e) => setAwardForm(prev => ({ ...prev, points: e.target.value }))}
+                                        />
+                                      </div>
+                                      <div className="flex gap-2 pt-2">
+                                        <Button variant="outline" onClick={() => setIsAwardDialogOpen(false)} className="flex-1">
+                                          Cancel
+                                        </Button>
+                                        <Button onClick={handleAwardPoints} className="flex-1 gap-1">
+                                          <Award className="h-4 w-4" />
+                                          Award Points
+                                        </Button>
+                                      </div>
                                     </div>
-                                  );
-                                })}
+                                  </DialogContent>
+                                </Dialog>
                               </div>
                             </div>
                           </DialogContent>
@@ -2089,17 +2245,13 @@ export default function Admin() {
                     <Calendar className="h-4 w-4" />
                     Meetups
                   </TabsTrigger>
-                  <TabsTrigger value="participants" className="gap-2">
+                  <TabsTrigger value="members" className="gap-2">
                     <Users className="h-4 w-4" />
-                    Participants
+                    Members
                   </TabsTrigger>
                   <TabsTrigger value="college-champs" className="gap-2">
                     <GraduationCap className="h-4 w-4" />
                     College Champs
-                  </TabsTrigger>
-                  <TabsTrigger value="role-management" className="gap-2">
-                    <Shield className="h-4 w-4" />
-                    Roles
                   </TabsTrigger>
                 </>
               )}
@@ -2269,34 +2421,12 @@ export default function Admin() {
                 </TabsContent>
 
 
-                <TabsContent value="participants">
-                  <Card className="glass-card">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Users className="h-5 w-5 text-primary" />
-                        Registered Participants
-                      </CardTitle>
-                      <CardDescription>
-                        View all participants across sprints and meetups
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-8">
-                        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground">
-                          Participant management will be available when backend is connected.
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                <TabsContent value="members">
+                  <MembersTab />
                 </TabsContent>
 
                 <TabsContent value="college-champs">
                   <CollegeChampsTab />
-                </TabsContent>
-
-                <TabsContent value="role-management">
-                  <RoleManagementTab />
                 </TabsContent>
               </>
             )}
